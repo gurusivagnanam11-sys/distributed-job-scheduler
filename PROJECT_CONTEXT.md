@@ -139,7 +139,7 @@ the accepted trade-off — document it, don't apologize for it).
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Setup | ✅ Done | Full schema (12 tables), Docker Compose, Alembic migration, all 11 entities scaffolded |
-| 1 — Auth & Projects | Not started | |
+| 1 — Auth & Projects | ✅ Done | JWT auth, Project CRUD, API Keys. Org auto-created on signup. |
 | 2 — Queues & Retry Policies | Not started | |
 | 3 — Job Submission API | Not started | |
 | 4A — Claim + Execute | Not started | **DO NOT let an agent restructure the claim query — see §5** |
@@ -152,4 +152,4 @@ the accepted trade-off — document it, don't apologize for it).
 
 **Known open decisions:**
 - Idempotency mechanism (§6) — not yet chosen
-- Org creation on signup: automatic vs explicit step — not yet decided
+- Org creation on signup: Resolved (auto-created on signup to avoid two-step onboarding flow).

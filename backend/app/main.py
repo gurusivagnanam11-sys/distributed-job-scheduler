@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.routers import auth, projects
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,6 +22,10 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+# --- Routers ---
+app.include_router(auth.router)
+app.include_router(projects.router)
 
 # CORS — allow frontend dev server
 app.add_middleware(
