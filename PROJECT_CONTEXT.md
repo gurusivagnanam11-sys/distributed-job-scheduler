@@ -134,15 +134,15 @@ the accepted trade-off — document it, don't apologize for it).
 
 ## 9. Current Status (UPDATE THIS SECTION AS WORK PROGRESSES)
 
-**Last updated by:** Antigravity — 2026-08-19
+**Last updated by:** Antigravity — 2026-08-20
 
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Setup | ✅ Done | Full schema (12 tables), Docker Compose, Alembic migration, all 11 entities scaffolded |
 | 1 — Auth & Projects | ✅ Done | JWT auth, Project CRUD, API Keys. Org auto-created on signup. |
-| 2 — Queues & Retry Policies | Not started | |
-| 3 — Job Submission API | Not started | |
-| 4A — Claim + Execute | Not started | **DO NOT let an agent restructure the claim query — see §5** |
+| 2 — Queues & Retry Policies | ✅ Done | Queue CRUD, Pause/Resume, Retry Policies, Queue Stats. Queue deletion is blocked (409) if active non-terminal jobs exist. Duplicate retry policy POST returns 409. |
+| 3 — Job Submission API | ✅ Done | Immediate, Delayed, Scheduled, Recurring, and Batch submission under `POST /queues/{id}/jobs`. Dedupe returns 200 (existing) for non-terminal matches. Note: "Delayed" and "Scheduled" use the exact same DB mechanism. Recurring jobs spawn `RecurringJobTemplate` records. |
+| 4A — Claim + Execute | ✅ Done | Atomic claim via `SELECT FOR UPDATE` on queue row + `FOR UPDATE SKIP LOCKED` on jobs. Concurrent execution via `asyncio.gather` with per-job sessions. Retry reuses Phase 2 `compute_delay()`. Concurrent-claim test verified under real contention (5 workers, failed on naive first attempt, fixed with queue-row lock). |
 | 4B — Heartbeat/Reclaim/DLQ/Idempotency | Not started | Idempotency mechanism not yet decided — see §6 |
 | 5 — Observability | Not started | |
 | 6 — Frontend Dashboard | Not started | |
@@ -151,5 +151,5 @@ the accepted trade-off — document it, don't apologize for it).
 | 9 — Tests | Not started | Concurrent-claim test is highest priority — write alongside 4A, not after |
 
 **Known open decisions:**
-- Idempotency mechanism (§6) — not yet chosen
+- Idempotency mechanism (§6) — Resolved: Dedupe key checks against active jobs in the queue. If a submitted job's `dedupe_key` matches an existing job in a non-terminal state, it returns the existing job (200 OK) without error.
 - Org creation on signup: Resolved (auto-created on signup to avoid two-step onboarding flow).

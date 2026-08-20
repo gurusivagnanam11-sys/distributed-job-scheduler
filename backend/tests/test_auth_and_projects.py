@@ -13,16 +13,10 @@ from app.main import app
 BASE_URL = "http://test"
 
 
-@pytest.fixture(scope="module")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
 
 import pytest_asyncio
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture()
 async def client():
     """Async HTTP client for testing."""
     from httpx import ASGITransport

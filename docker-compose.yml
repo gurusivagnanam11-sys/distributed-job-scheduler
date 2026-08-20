@@ -49,8 +49,8 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
-    # Worker entry point — placeholder until Phase 4
-    command: echo "Worker process placeholder — will be implemented in Phase 4" && sleep infinity
+    # Worker entry point — Phase 4A
+    command: python -m app.worker.main
 
   frontend:
     build:

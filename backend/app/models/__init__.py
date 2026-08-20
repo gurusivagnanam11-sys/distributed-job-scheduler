@@ -11,11 +11,12 @@ from app.models.job_log import JobLog
 from app.models.worker import Worker
 from app.models.worker_heartbeat import WorkerHeartbeat
 from app.models.dead_letter_entry import DeadLetterEntry
+from app.models.recurring_job_template import RecurringJobTemplate
 
 __all__ = [
     "Base",
     "Organization", "User", "Project", "ApiKey",
-    "Queue", "RetryPolicy",
+    "Queue", "RetryPolicy", "RecurringJobTemplate",
     "Job", "JobStatus", "JobExecution", "JobLog",
     "Worker", "WorkerHeartbeat",
     "DeadLetterEntry",

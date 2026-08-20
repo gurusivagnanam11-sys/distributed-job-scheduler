@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.routers import auth, projects
+from app.routers import auth, projects, queues, jobs
 
 
 @asynccontextmanager
@@ -26,6 +26,8 @@ app = FastAPI(
 # --- Routers ---
 app.include_router(auth.router)
 app.include_router(projects.router)
+app.include_router(queues.router)
+app.include_router(jobs.router)
 
 # CORS — allow frontend dev server
 app.add_middleware(
