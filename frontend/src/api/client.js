@@ -102,6 +102,23 @@ export const createProject = async (name, description) => {
   });
 };
 
+export const getApiKeys = async (projectId) => {
+  return fetchWithAuth(`/projects/${projectId}/api-keys`);
+};
+
+export const createApiKey = async (projectId, data) => {
+  return fetchWithAuth(`/projects/${projectId}/api-keys`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
+export const revokeApiKey = async (projectId, keyId) => {
+  return fetchWithAuth(`/projects/${projectId}/api-keys/${keyId}`, {
+    method: 'DELETE',
+  });
+};
+
 // --- Worker API ---
 export const getWorkers = async (page = 1, pageSize = 20, status = null) => {
   let url = `/workers?page=${page}&page_size=${pageSize}`;
