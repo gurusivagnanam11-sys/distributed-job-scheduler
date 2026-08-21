@@ -3,25 +3,16 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 import { LayoutDashboard, ListTree, Activity, LogOut, Plus, Folder, Settings, Clock } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProjects, createProject, getCurrentProject, setCurrentProject } from '../api/client';
+import { getProjects, createProject } from '../api/client';
 import { ApiKeysPanel } from './ApiKeysPanel';
 
 export const Layout = () => {
-  const { logout } = useAuth();
+  const { logout, currentProjectId, selectProject } = useAuth();
   const queryClient = useQueryClient();
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDescription, setNewProjectDescription] = useState('');
-  const [currentProjectId, setCurrentProjectIdState] = useState(getCurrentProject());
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-
-  React.useEffect(() => {
-    const handleProjectChanged = () => {
-      setCurrentProjectIdState(getCurrentProject());
-    };
-    window.addEventListener('project:changed', handleProjectChanged);
-    return () => window.removeEventListener('project:changed', handleProjectChanged);
-  }, []);
 
   const { data: projectsData, isLoading: isProjectsLoading } = useQuery({
     queryKey: ['projects'],
@@ -31,23 +22,26 @@ export const Layout = () => {
   const createProjectMutation = useMutation({
     mutationFn: (data) => createProject(data.name, data.description),
     onSuccess: (newProject) => {
-      queryClient.invalidateQueries(['projects']);
-      setCurrentProject(newProject.id);
-      setCurrentProjectIdState(newProject.id);
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      selectProject(newProject.id);
       setIsCreateProjectModalOpen(false);
       setNewProjectName('');
       setNewProjectDescription('');
-      window.dispatchEvent(new Event('project:changed'));
     },
   });
+
+  React.useEffect(() => {
+    if (projectsData?.items?.length > 0 && !currentProjectId) {
+      selectProject(projectsData.items[0].id);
+    }
+  }, [projectsData, currentProjectId, selectProject]);
 
   const handleProjectChange = (e) => {
     const value = e.target.value;
     if (value === 'new') {
       setIsCreateProjectModalOpen(true);
     } else {
-      setCurrentProject(value);
-      window.dispatchEvent(new Event('project:changed'));
+      selectProject(value);
       queryClient.invalidateQueries(); // Invalidate all to refresh queue/job data
     }
   };
