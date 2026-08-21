@@ -184,6 +184,27 @@ export const getJobs = async (queueId, page = 1, pageSize = 20, status = null) =
   return fetchWithAuth(url);
 };
 
+export const getJob = async (jobId) => {
+  return fetchWithAuth(`/jobs/${jobId}`);
+};
+
+export const getRecurringJobs = async (queueId, page = 1, pageSize = 20) => {
+  return fetchWithAuth(`/queues/${queueId}/recurring-jobs?page=${page}&page_size=${pageSize}`);
+};
+
+export const updateRecurringJob = async (queueId, templateId, data) => {
+  return fetchWithAuth(`/queues/${queueId}/recurring-jobs/${templateId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteRecurringJob = async (queueId, templateId) => {
+  return fetchWithAuth(`/queues/${queueId}/recurring-jobs/${templateId}`, {
+    method: 'DELETE',
+  });
+};
+
 export const getJobTimeline = async (jobId) => {
   return fetchWithAuth(`/jobs/${jobId}/timeline`);
 };

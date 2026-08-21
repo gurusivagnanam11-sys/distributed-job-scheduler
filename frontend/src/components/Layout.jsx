@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
-import { LayoutDashboard, ListTree, Activity, LogOut, Plus, Folder, Settings } from 'lucide-react';
+import { LayoutDashboard, ListTree, Activity, LogOut, Plus, Folder, Settings, Clock } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProjects, createProject, getCurrentProject, setCurrentProject } from '../api/client';
 import { ApiKeysPanel } from './ApiKeysPanel';
@@ -121,6 +121,10 @@ export const Layout = () => {
           <NavLink to="/queues" style={navLinkStyle}>
             <LayoutDashboard size={20} style={{ marginRight: '0.75rem' }} />
             Queue Overview
+          </NavLink>
+          <NavLink to="/recurring-jobs" style={navLinkStyle}>
+            <Clock size={20} style={{ marginRight: '0.75rem' }} />
+            Recurring Jobs
           </NavLink>
           <NavLink to="/workers" style={navLinkStyle}>
             <Activity size={20} style={{ marginRight: '0.75rem' }} />

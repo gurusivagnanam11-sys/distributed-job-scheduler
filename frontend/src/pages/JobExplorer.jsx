@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getJobs, getQueues, getCurrentProject, submitJob } from '../api/client';
 import { StatusBadge } from '../components/StatusBadge';
 import { format } from 'date-fns';
-import { Plus } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
+import { retryJob } from '../api/client';
 
 const JOB_STATUSES = [
   'queued', 'scheduled', 'claimed', 'running', 
@@ -20,7 +21,7 @@ const SubmitJobModal = ({ queueId, onClose }) => {
   const [scheduledAt, setScheduledAt] = useState('');
   const [cronExpression, setCronExpression] = useState('');
   const [payloadStr, setPayloadStr] = useState('{}');
-  const [batchPayloadStr, setBatchPayloadStr] = useState('[\n  {"payload": {}}\n]');
+  const [batchPayloads, setBatchPayloads] = useState(['{}']);
   const [errorMsg, setErrorMsg] = useState('');
 
   const submitMutation = useMutation({
@@ -45,8 +46,14 @@ const SubmitJobModal = ({ queueId, onClose }) => {
       };
 
       if (jobType === 'batch') {
-        const batchArr = JSON.parse(batchPayloadStr);
-        if (!Array.isArray(batchArr)) throw new Error("Batch payload must be a JSON array");
+        const batchArr = batchPayloads.map((p, idx) => {
+          try {
+            return { payload: JSON.parse(p) };
+          } catch (err) {
+            throw new Error(`Invalid JSON in batch item ${idx + 1}`);
+          }
+        });
+        if (batchArr.length === 0) throw new Error("Batch must contain at least one job");
         data = { batch: batchArr };
       } else {
         data.payload = JSON.parse(payloadStr);
@@ -119,16 +126,53 @@ const SubmitJobModal = ({ queueId, onClose }) => {
           </div>
         )}
 
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>
-            {jobType === 'batch' ? 'Batch Payload (JSON Array)' : 'Job Payload (JSON Object)'}
-          </label>
-          <textarea 
-            value={jobType === 'batch' ? batchPayloadStr : payloadStr} 
-            onChange={e => jobType === 'batch' ? setBatchPayloadStr(e.target.value) : setPayloadStr(e.target.value)} 
-            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', minHeight: '120px', fontFamily: 'monospace', fontSize: '0.875rem' }} 
-          />
-        </div>
+        {jobType === 'batch' ? (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>
+              Batch Payloads
+            </label>
+            {batchPayloads.map((payload, idx) => (
+              <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'flex-start' }}>
+                <textarea 
+                  value={payload} 
+                  onChange={e => {
+                    const newPayloads = [...batchPayloads];
+                    newPayloads[idx] = e.target.value;
+                    setBatchPayloads(newPayloads);
+                  }}
+                  style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', minHeight: '60px', fontFamily: 'monospace', fontSize: '0.875rem' }} 
+                />
+                <button 
+                  onClick={() => {
+                    const newPayloads = batchPayloads.filter((_, i) => i !== idx);
+                    setBatchPayloads(newPayloads);
+                  }}
+                  disabled={batchPayloads.length === 1}
+                  style={{ padding: '0.5rem', backgroundColor: '#fee2e2', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '4px', cursor: batchPayloads.length === 1 ? 'not-allowed' : 'pointer', flexShrink: 0 }}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button 
+              onClick={() => setBatchPayloads([...batchPayloads, '{}'])}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', backgroundColor: '#f3f4f6', color: '#4b5563', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}
+            >
+              <Plus size={16} /> Add Job to Batch
+            </button>
+          </div>
+        ) : (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>
+              Job Payload (JSON Object)
+            </label>
+            <textarea 
+              value={payloadStr} 
+              onChange={e => setPayloadStr(e.target.value)} 
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', minHeight: '120px', fontFamily: 'monospace', fontSize: '0.875rem' }} 
+            />
+          </div>
+        )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
           <button onClick={onClose} style={{ padding: '0.5rem 1rem', backgroundColor: 'white', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
@@ -143,6 +187,7 @@ const SubmitJobModal = ({ queueId, onClose }) => {
 
 export const JobExplorer = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const projectId = getCurrentProject();
   
   const [selectedQueue, setSelectedQueue] = useState('');
@@ -171,6 +216,12 @@ export const JobExplorer = () => {
     queryFn: () => getJobs(selectedQueue, page, pageSize, selectedStatus || null),
     enabled: !!selectedQueue,
     refetchInterval: 5000,
+  });
+
+  const retryJobMutation = useMutation({
+    mutationFn: retryJob,
+    onSuccess: () => queryClient.invalidateQueries(['jobs']),
+    onError: (err) => alert(`Retry failed: ${err.message}`)
   });
 
   if (!projectId) return <div>No project found.</div>;
@@ -244,6 +295,7 @@ export const JobExplorer = () => {
                 <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>Attempts</th>
                 <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>Scheduled At</th>
                 <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>Created At</th>
+                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -264,6 +316,18 @@ export const JobExplorer = () => {
                   </td>
                   <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: '#4b5563' }}>
                     {format(new Date(job.created_at), 'MMM d, HH:mm:ss')}
+                  </td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+                    {job.status === 'dead_letter' && (
+                      <button 
+                        onClick={() => retryJobMutation.mutate(job.id)}
+                        disabled={retryJobMutation.isPending}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '500', marginLeft: 'auto' }}
+                        title="Retry Job"
+                      >
+                        <RefreshCw size={12} /> Retry
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
