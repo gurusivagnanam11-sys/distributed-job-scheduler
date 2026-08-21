@@ -146,8 +146,8 @@ the accepted trade-off — document it, don't apologize for it).
 | 4B — Heartbeat/Reclaim/DLQ/Idempotency | ✅ Done | Idempotency contract defined. Worker Heartbeat loop implemented. Reaper loop implemented for DLQ/retry transitions. Graceful shutdown (SIGTERM) with timeout. Recurring Scheduler wiring added. All 33 tests passing. |
 | 5 — Observability | ✅ Done | Centralized structured logging via `log_job_event` (with `execution_id=None` support for claims). Added `/jobs/{id}/timeline`, `/jobs/{id}/executions`, and `/queues/{id}/metrics` endpoints. 5/5 tests passing. |
 | 6 — Frontend Dashboard | ✅ Done | Built React (Vite) dashboard with Job Explorer, Job Detail, and Queue Overview views. Verified backend pause/resume behavior via integration test. Auth is in-memory only. |
-| 7 — Bonus (workflow deps) | Not started | |
-| 8 — Docs | In progress | `API.md` and `DESIGN_DECISIONS.md` completed; remaining docs not started. |
+| 7 — Bonus (failure summaries) | ✅ Done | Added `/jobs/{id}/failure-summary` endpoint. Uses Anthropic Claude 3.5 Sonnet to generate plain-English summaries of failed job executions. Caches results in `JobExecution.ai_failure_summary`. Graceful degradation to returning raw error on LLM failure or timeout. Displayed in a new panel in `JobDetail.jsx`. 3/3 tests passing. |
+| 8 — Docs | ✅ Done | `ARCHITECTURE.md`, `ER_DIAGRAM.md`, `API.md`, `DESIGN_DECISIONS.md`, and `CONTEXT.md` completed. |
 | 9 — Tests | ✅ Done | Concurrency and failure path tests added alongside Phase 4 components. 48/48 passing (including 6 new API key auth tests). |
 | API Key Auth | ✅ Done | `X-API-Key` header accepted on `POST /queues/{id}/jobs`. Project-scoped (stricter than JWT org-scoping). 6/6 tests passing. See `app/core/security.py::get_submitter_org_id`. |
 
