@@ -1,5 +1,7 @@
 # Architecture
 
+![Architecture Diagram](ARCHITECTURE.png)
+
 This document describes how the current system fits together in practice, based on the live worker implementation in:
 
 - `backend/app/worker/main.py`
@@ -18,31 +20,31 @@ For the rationale behind some of the locking and auth choices, see:
 
 ```mermaid
 flowchart TD
-    FE[Frontend<br/>React + Vite dashboard]
-    API[FastAPI API layer]
+    FE["Frontend<br/>React + Vite dashboard"]
+    API["FastAPI API layer"]
     DB[(PostgreSQL)]
 
     subgraph WP[Worker process]
-        MAIN[main.py<br/>worker entrypoint]
-        POLL[claim loop<br/>poll active queues]
-        EXEC[executor.py<br/>execute claimed jobs]
+        MAIN["main.py<br/>worker entrypoint"]
+        POLL["claim loop<br/>poll active queues"]
+        EXEC["executor.py<br/>execute claimed jobs"]
         HB[heartbeat loop]
         REAPER[reaper loop]
         RS[recurring-scheduler loop]
     end
 
-    SUBMIT[Job submission<br/>immediate / delayed / scheduled / recurring / batch]
-    CLAIM[claim_jobs()<br/>atomic claim + lease]
-    RUN[Job execution<br/>running -> completed / retrying / dead_letter]
+    SUBMIT["Job submission<br/>immediate / delayed / scheduled / recurring / batch"]
+    CLAIM["claim_jobs()<br/>atomic claim + lease"]
+    RUN["Job execution<br/>running -> completed / retrying / dead_letter"]
     STALE[Stale lease detected]
     RETRY[Retry with backoff]
     DLQ[Dead Letter Queue]
-    MANUAL[Manual retry<br/>API / dashboard]
-    RECUR[Recurring template<br/>next_run_at reached]
+    MANUAL["Manual retry<br/>API / dashboard"]
+    RECUR["Recurring template<br/>next_run_at reached"]
     HEART[Worker heartbeat]
 
     FE -->|JWT for dashboard actions| API
-    EXT[External submission client<br/>X-API-Key] --> API
+    EXT["External submission client<br/>X-API-Key"] --> API
 
     API --> SUBMIT --> DB
     API -->|read job / queue / worker views| DB
