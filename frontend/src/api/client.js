@@ -117,6 +117,44 @@ export const getQueues = async (projectId) => {
   return fetchWithAuth(`/projects/${projectId}/queues`);
 };
 
+export const createQueue = async (projectId, data) => {
+  return fetchWithAuth(`/projects/${projectId}/queues`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
+export const updateQueue = async (queueId, data) => {
+  return fetchWithAuth(`/queues/${queueId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteQueue = async (queueId) => {
+  return fetchWithAuth(`/queues/${queueId}`, {
+    method: 'DELETE',
+  });
+};
+
+export const getRetryPolicy = async (queueId) => {
+  return fetchWithAuth(`/queues/${queueId}/retry-policy`);
+};
+
+export const createRetryPolicy = async (queueId, data) => {
+  return fetchWithAuth(`/queues/${queueId}/retry-policy`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
+export const updateRetryPolicy = async (queueId, data) => {
+  return fetchWithAuth(`/queues/${queueId}/retry-policy`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+};
+
 export const pauseQueue = async (queueId) => {
   return fetchWithAuth(`/queues/${queueId}/pause`, { method: 'POST' });
 };
