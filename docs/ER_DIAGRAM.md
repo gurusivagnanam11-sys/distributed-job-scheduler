@@ -1,6 +1,6 @@
 # ER Diagram
 
-![ER Diagram](er_diagram.jpg)
+![ER Diagram](ER_DIAGRAM.png)
 
 The diagram below reflects the current schema as implemented in the model files under `backend/app/models/` and the Alembic migrations in `backend/alembic/versions/`. It includes the recurring-template table added after the initial schema, so the live schema is **13 tables** in total.
 
@@ -55,7 +55,7 @@ erDiagram
 
     RetryPolicy {
         UUID id PK
-        UUID queue_id FK UK
+        UUID queue_id FK
         int max_retries
         string backoff_strategy
         float backoff_base_seconds
