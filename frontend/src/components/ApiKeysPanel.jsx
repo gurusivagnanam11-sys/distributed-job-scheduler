@@ -17,7 +17,7 @@ export const ApiKeysPanel = ({ projectId }) => {
   });
 
   const createMutation = useMutation({
-    mutationFn: (label) => createApiKey(projectId, label),
+    mutationFn: (label) => createApiKey(projectId, { label }),
     onSuccess: (data) => {
       setNewlyCreatedKey(data.raw_key);
       setNewKeyLabel('');
