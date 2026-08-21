@@ -134,7 +134,7 @@ the accepted trade-off — document it, don't apologize for it).
 
 ## 9. Current Status (UPDATE THIS SECTION AS WORK PROGRESSES)
 
-**Last updated by:** Antigravity — 2026-08-20
+**Last updated by:** Codex — 2026-08-21
 
 | Phase | Status | Notes |
 |---|---|---|
@@ -147,9 +147,14 @@ the accepted trade-off — document it, don't apologize for it).
 | 5 — Observability | Not started | |
 | 6 — Frontend Dashboard | Not started | |
 | 7 — Bonus (workflow deps) | Not started | |
-| 8 — Docs | Not started | |
+| 8 — Docs | In progress | `API.md` and `DESIGN_DECISIONS.md` completed; remaining docs not started. |
 | 9 — Tests | Not started | Concurrent-claim test is highest priority — write alongside 4A, not after |
 
 **Known open decisions:**
-- Idempotency mechanism (§6) — Resolved: Dedupe key checks against active jobs in the queue. If a submitted job's `dedupe_key` matches an existing job in a non-terminal state, it returns the existing job (200 OK) without error.
+- Idempotency mechanism (§6) — Resolved: Dedupe key checks against active jobs in the queue for scheduling. Execution-attempt tracking via `JobExecution` rows for execution.
 - Org creation on signup: Resolved (auto-created on signup to avoid two-step onboarding flow).
+
+**Bug Fixes (Post-Phase 6 Audit):**
+- **Reaper Lock-Safety**: Fixed bug where concurrent reapers could double-reclaim the same job by adding `FOR UPDATE SKIP LOCKED` to `reclaim_stale_jobs()`.
+- **Dedupe Race Condition**: Fixed race condition in job submission by catching `IntegrityError` for `uq_job_queue_dedupe_key` and returning 200 OK.
+- **Logging Wiring**: Wired `setup_logging()` to FastAPI lifespan and worker startup.

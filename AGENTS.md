@@ -109,9 +109,9 @@ do not silently substitute.
 
 ## 6. Idempotency mechanism (decide once, document, don't drift)
 
-Chosen approach: **[FILL IN once decided — see Phase 4B]**. Whichever is chosen, every
-agent touching execution logic must honor it consistently. Do not invent a second
-idempotency mechanism elsewhere in the codebase.
+Chosen approach: **Execution-attempt tracking via `JobExecution` rows**.
+Execution-attempt tracking via `JobExecution` rows is the idempotency contract.
+True exactly-once would require handlers to be idempotent themselves. The worker guarantees at-least-once execution. Every execution attempt is tracked via `JobExecution` rows linked to the attempt count. Deduplication at submission handles exactly-once scheduling semantics, but for execution, the handlers must own the idempotency logic if they require true exactly-once side effects.
 
 ## 7. Conventions
 
@@ -134,7 +134,7 @@ the accepted trade-off — document it, don't apologize for it).
 
 ## 9. Current Status (UPDATE THIS SECTION AS WORK PROGRESSES)
 
-**Last updated by:** Antigravity — 2026-08-20
+**Last updated by:** Codex — 2026-08-21
 
 | Phase | Status | Notes |
 |---|---|---|
@@ -143,13 +143,19 @@ the accepted trade-off — document it, don't apologize for it).
 | 2 — Queues & Retry Policies | ✅ Done | Queue CRUD, Pause/Resume, Retry Policies, Queue Stats. Queue deletion is blocked (409) if active non-terminal jobs exist. Duplicate retry policy POST returns 409. |
 | 3 — Job Submission API | ✅ Done | Immediate, Delayed, Scheduled, Recurring, and Batch submission under `POST /queues/{id}/jobs`. Dedupe returns 200 (existing) for non-terminal matches. Note: "Delayed" and "Scheduled" use the exact same DB mechanism. Recurring jobs spawn `RecurringJobTemplate` records. |
 | 4A — Claim + Execute | ✅ Done | Atomic claim via `SELECT FOR UPDATE` on queue row + `FOR UPDATE SKIP LOCKED` on jobs. Concurrent execution via `asyncio.gather` with per-job sessions. Retry reuses Phase 2 `compute_delay()`. Concurrent-claim test verified under real contention (5 workers, failed on naive first attempt, fixed with queue-row lock). |
-| 4B — Heartbeat/Reclaim/DLQ/Idempotency | Not started | Idempotency mechanism not yet decided — see §6 |
-| 5 — Observability | Not started | |
-| 6 — Frontend Dashboard | Not started | |
+| 4B — Heartbeat/Reclaim/DLQ/Idempotency | ✅ Done | Idempotency contract defined. Worker Heartbeat loop implemented. Reaper loop implemented for DLQ/retry transitions. Graceful shutdown (SIGTERM) with timeout. Recurring Scheduler wiring added. All 33 tests passing. |
+| 5 — Observability | ✅ Done | Centralized structured logging via `log_job_event` (with `execution_id=None` support for claims). Added `/jobs/{id}/timeline`, `/jobs/{id}/executions`, and `/queues/{id}/metrics` endpoints. 5/5 tests passing. |
+| 6 — Frontend Dashboard | ✅ Done | Built React (Vite) dashboard with Job Explorer, Job Detail, and Queue Overview views. Verified backend pause/resume behavior via integration test. Auth is in-memory only. |
 | 7 — Bonus (workflow deps) | Not started | |
-| 8 — Docs | Not started | |
-| 9 — Tests | Not started | Concurrent-claim test is highest priority — write alongside 4A, not after |
+| 8 — Docs | In progress | `API.md` and `DESIGN_DECISIONS.md` completed; remaining docs not started. |
+| 9 — Tests | ✅ Done | Concurrency and failure path tests added alongside Phase 4 components. 48/48 passing (including 6 new API key auth tests). |
+| API Key Auth | ✅ Done | `X-API-Key` header accepted on `POST /queues/{id}/jobs`. Project-scoped (stricter than JWT org-scoping). 6/6 tests passing. See `app/core/security.py::get_submitter_org_id`. |
 
 **Known open decisions:**
-- Idempotency mechanism (§6) — Resolved: Dedupe key checks against active jobs in the queue. If a submitted job's `dedupe_key` matches an existing job in a non-terminal state, it returns the existing job (200 OK) without error.
+- Idempotency mechanism (§6) — Resolved: Dedupe key checks against active jobs in the queue for scheduling. Execution-attempt tracking via `JobExecution` rows for execution.
 - Org creation on signup: Resolved (auto-created on signup to avoid two-step onboarding flow).
+
+**Bug Fixes (Post-Phase 6 Audit):**
+- **Reaper Lock-Safety**: Fixed bug where concurrent reapers could double-reclaim the same job by adding `FOR UPDATE SKIP LOCKED` to `reclaim_stale_jobs()`.
+- **Dedupe Race Condition**: Fixed race condition in job submission by catching `IntegrityError` for `uq_job_queue_dedupe_key` and returning 200 OK.
+- **Logging Wiring**: Wired `setup_logging()` to FastAPI lifespan and worker startup.
