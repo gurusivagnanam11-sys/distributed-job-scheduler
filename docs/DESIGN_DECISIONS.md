@@ -2,6 +2,17 @@
 
 This document records the implementation choices that were made where the brief left room for interpretation. The goal is to be explicit about what the system does and why.
 
+## Summary
+
+| Decision | What we chose |
+|---|---|
+| Priority | Per job, ordered in the claim query by `priority DESC, scheduled_at ASC`. |
+| Delayed vs scheduled | One mechanism: both use future `scheduled_at` values. |
+| Dedupe | Per queue, non-terminal duplicates return the existing row, terminal rows can be reused. |
+| Idempotency | At-least-once execution with full attempt history in `JobExecution`. |
+| Locking | Queue-row `FOR UPDATE` plus job-row `FOR UPDATE SKIP LOCKED`. |
+| API keys | Project-scoped `X-API-Key` auth for submission clients. |
+
 ## Priority is per job, not per queue
 
 Priority lives on `Job`, not `Queue`. A single per-queue priority would not create meaningful scheduling choice, because every job in that queue would inherit the same value.
@@ -22,17 +33,23 @@ If a duplicate key is submitted while the existing job is still non-terminal, th
 
 That prevents duplicate in-flight work without making the key permanently one-time-only. The implementation is race-safe as well: concurrent submissions are handled by catching the unique-constraint violation and returning the existing row, not by relying on a check-then-insert sequence.
 
+The code matches that rule: it checks for an existing non-terminal job first, then catches the queue-level dedupe unique-constraint violation and resolves the race by returning the already-created row.
+
 ## Idempotency contract
 
 The system guarantees at-least-once execution and records every attempt in `JobExecution` rows.
 
 It does not suppress side effects automatically if a worker dies mid-job. In that case the reaper can reclaim the job and it will run again as a new, logged attempt. True exactly-once behavior is the handler’s responsibility, usually by making side effects idempotent and keyed on `job_id`.
 
+### Why not exactly-once?
+
+Exactly-once side effects would require the handler and its downstream systems to coordinate durable deduplication. This scheduler does not try to own that problem. It owns execution tracking, retries, and recovery; handlers own their own idempotent writes.
+
 ## Row-locking design for claim and reaper
 
 `claim.py` uses two levels of locking on purpose. A queue-row `FOR UPDATE` lock serializes concurrent claim attempts for the same queue, so `available_slots` is computed against committed state only. Inside that transaction, job rows are selected with `FOR UPDATE SKIP LOCKED`, which keeps workers from blocking each other on individual jobs.
 
-That trade-off serializes claim throughput per queue, but it preserves correctness and keeps the logic simple. It is an acceptable scope choice here, and the system scales horizontally by adding more queues rather than trying to maximize parallelism inside one queue.
+That trade-off serializes claim throughput per queue, but it preserves correctness and keeps the logic simple. It is an acceptable scope choice here, and the system scales horizontally by adding more queues instead of pushing more parallel claim throughput into a single queue.
 
 The reaper uses the same `SKIP LOCKED` pattern independently so two reaper loops cannot double-reclaim the same stale job.
 

@@ -147,7 +147,7 @@ the accepted trade-off — document it, don't apologize for it).
 | 5 — Observability | Not started | |
 | 6 — Frontend Dashboard | Not started | |
 | 7 — Bonus (workflow deps) | Not started | |
-| 8 — Docs | ✅ Done | `ARCHITECTURE.md`, `ER_DIAGRAM.md`, `API.md`, `DESIGN_DECISIONS.md`, and `CONTEXT.md` completed. |
+| 8 — Docs | ✅ Done | `ARCHITECTURE.md`, `ER_DIAGRAM.md`, `API.md`, `DESIGN_DECISIONS.md`, and `CONTEXT.md` completed. Design decisions now include a summary table, dedupe verification note, queue-scaling clarification, and an idempotency explanation. |
 | 9 — Tests | Not started | Concurrent-claim test is highest priority — write alongside 4A, not after |
 
 **Known open decisions:**
