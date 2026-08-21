@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
-import { LayoutDashboard, ListTree, Activity, LogOut, Plus, Folder } from 'lucide-react';
+import { LayoutDashboard, ListTree, Activity, LogOut, Plus, Folder, Settings } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProjects, createProject, getCurrentProject, setCurrentProject } from '../api/client';
+import { ApiKeysPanel } from './ApiKeysPanel';
 
 export const Layout = () => {
   const { logout } = useAuth();
@@ -12,6 +13,7 @@ export const Layout = () => {
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDescription, setNewProjectDescription] = useState('');
   const [currentProjectId, setCurrentProjectIdState] = useState(getCurrentProject());
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   React.useEffect(() => {
     const handleProjectChanged = () => {
@@ -85,18 +87,31 @@ export const Layout = () => {
               <Plus size={16} /> Create Project
             </button>
           ) : (
-            <select 
-              value={currentProjectId || ''} 
-              onChange={handleProjectChange}
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.875rem' }}
-            >
-              {projectsData?.items?.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-              <option value="new">-- Create New Project --</option>
-            </select>
-          )}
-        </div>
+              <select 
+                value={currentProjectId || ''} 
+                onChange={handleProjectChange}
+                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.875rem' }}
+              >
+                {projectsData?.items?.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+                <option value="new">-- Create New Project --</option>
+              </select>
+            </div>
+            
+            {currentProjectId && (
+              <div style={{ marginTop: '0.5rem' }}>
+                <button 
+                  onClick={() => setIsSettingsModalOpen(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.5rem', backgroundColor: 'transparent', border: '1px solid #e5e7eb', borderRadius: '4px', color: '#4b5563', cursor: 'pointer', fontSize: '0.875rem' }}
+                >
+                  <Settings size={14} /> Project Settings
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
         <nav style={{ padding: '1rem', flex: 1 }}>
           <NavLink to="/" style={navLinkStyle}>
@@ -182,6 +197,35 @@ export const Layout = () => {
                 style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: (!newProjectName || createProjectMutation.isPending) ? 'not-allowed' : 'pointer' }}
               >
                 {createProjectMutation.isPending ? 'Creating...' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Project Settings Modal */}
+      {isSettingsModalOpen && currentProjectId && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '600px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0 }}>Project Settings</h2>
+              <button 
+                onClick={() => setIsSettingsModalOpen(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#6b7280' }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            {/* We could have tabs here in the future, but for now just API Keys */}
+            <ApiKeysPanel projectId={currentProjectId} />
+            
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
+              <button 
+                onClick={() => setIsSettingsModalOpen(false)}
+                style={{ padding: '0.5rem 1rem', backgroundColor: '#f3f4f6', color: '#4b5563', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                Close
               </button>
             </div>
           </div>
