@@ -26,6 +26,11 @@ frontend/node_modules/
 # OS
 .DS_Store
 Thumbs.db
-
+AGENTS.md
+PROJECT_CONTEXT.md
+127003080_Guru S.zip
+127003080_Guru S/
+queue_overview_paused.png
+verify_ui.py
 # Docker
 .docker/
