@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getQueues, getCurrentProject, getRecurringJobs, updateRecurringJob, deleteRecurringJob } from '../api/client';
+import { useAuth } from '../components/AuthProvider';
+import { getQueues, getRecurringJobs, updateRecurringJob, deleteRecurringJob } from '../api/client';
 import { Play, Pause, Trash2, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const RecurringJobs = () => {
   const queryClient = useQueryClient();
-  const projectId = getCurrentProject();
+  const { currentProjectId: projectId } = useAuth();
   
   const [selectedQueue, setSelectedQueue] = useState('');
   const [page, setPage] = useState(1);
@@ -72,11 +73,13 @@ export const RecurringJobs = () => {
       </div>
 
       <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-        {isLoading ? (
+        {!selectedQueue ? (
+          <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Please select or create a queue to view recurring templates.</div>
+        ) : isLoading ? (
           <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Loading templates...</div>
         ) : isError ? (
           <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444' }}>Error loading templates</div>
-        ) : templatesData?.items?.length === 0 ? (
+        ) : !templatesData?.items || templatesData.items.length === 0 ? (
           <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No recurring job templates found in this queue.</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>

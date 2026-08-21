@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getJobs, getQueues, getCurrentProject, submitJob } from '../api/client';
+import { useAuth } from '../components/AuthProvider';
+import { getJobs, getQueues, submitJob } from '../api/client';
 import { StatusBadge } from '../components/StatusBadge';
 import { format } from 'date-fns';
 import { Plus, RefreshCw } from 'lucide-react';
@@ -188,7 +189,7 @@ const SubmitJobModal = ({ queueId, onClose }) => {
 export const JobExplorer = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const projectId = getCurrentProject();
+  const { currentProjectId: projectId } = useAuth();
   
   const [selectedQueue, setSelectedQueue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -279,11 +280,13 @@ export const JobExplorer = () => {
 
       {/* Table */}
       <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-        {isLoading ? (
+        {!selectedQueue ? (
+          <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Please select or create a queue to view jobs.</div>
+        ) : isLoading ? (
           <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Loading jobs...</div>
         ) : isError ? (
           <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444' }}>Error loading jobs</div>
-        ) : jobsData?.items?.length === 0 ? (
+        ) : !jobsData?.items || jobsData.items.length === 0 ? (
           <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No jobs found matching criteria.</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
