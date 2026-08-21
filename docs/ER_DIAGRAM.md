@@ -1,5 +1,7 @@
 # ER Diagram
 
+![ER Diagram](er_diagram.jpg)
+
 The diagram below reflects the current schema as implemented in the model files under `backend/app/models/` and the Alembic migrations in `backend/alembic/versions/`. It includes the recurring-template table added after the initial schema, so the live schema is **13 tables** in total.
 
 ```mermaid
@@ -182,6 +184,7 @@ The deletion rules below are verified against the current Alembic migrations and
 - `Queue -> RetryPolicy`: `ON DELETE CASCADE`
 - `Queue -> Job`: `ON DELETE CASCADE`
 - `Queue -> RecurringJobTemplate`: `ON DELETE CASCADE`
+- The `409 Conflict` queue-delete guard in the API is an application-level safety check for active jobs; if deletion is allowed to proceed, the database still applies the `CASCADE` rules above.
 - `Job -> JobExecution`: `ON DELETE RESTRICT`
 - `Job -> DeadLetterEntry`: `ON DELETE RESTRICT`
 - `JobExecution -> Worker` via `worker_id`: `ON DELETE SET NULL`
