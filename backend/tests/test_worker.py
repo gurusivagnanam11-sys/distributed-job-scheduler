@@ -399,9 +399,9 @@ async def test_exhausted_retries_sets_failed():
     async with async_session_factory() as session:
         r = await session.execute(select(Job).where(Job.id == job_id))
         j = r.scalar_one()
-        # max_retries=2, attempt_count=2 → exhausted → failed
-        assert j.status == JobStatus.FAILED, \
-            f"Expected failed after exhausting retries, got {j.status}"
+        # max_retries=2, attempt_count=2 → exhausted → dead_letter
+        assert j.status == JobStatus.DEAD_LETTER, \
+            f"Expected dead_letter after exhausting retries, got {j.status}"
         assert j.attempt_count == 2
 
     # Verify it's no longer claimable
@@ -415,7 +415,7 @@ async def test_exhausted_retries_sets_failed():
     async with async_session_factory() as session:
         claimed = await claim_jobs(session, worker_id, queue_id)
         await session.commit()
-        assert len(claimed) == 0, "Failed job should never be re-claimable"
+        assert len(claimed) == 0, "Dead lettered job should never be re-claimable"
 
 
 # ===========================================================================
@@ -468,3 +468,245 @@ async def test_successful_execution_records_job_execution():
         assert execution.finished_at >= execution.started_at
         assert execution.worker_id == worker_id
         assert execution.result == {"status": "completed"}
+
+
+# ===========================================================================
+# TEST 7: Heartbeat updates worker timestamp and inserts heartbeat record
+# ===========================================================================
+from app.worker.heartbeat import send_heartbeat
+from app.models.worker_heartbeat import WorkerHeartbeat
+
+@pytest.mark.asyncio
+async def test_heartbeat_updates_worker():
+    async with async_session_factory() as session:
+        worker = await _create_worker(session)
+        worker_id = worker.id
+        old_heartbeat = worker.last_heartbeat_at
+        await session.commit()
+    
+    # Send heartbeat
+    await send_heartbeat(worker_id)
+    
+    # Verify
+    async with async_session_factory() as session:
+        r = await session.execute(select(Worker).where(Worker.id == worker_id))
+        w = r.scalar_one()
+        assert w.last_heartbeat_at > old_heartbeat
+        
+        r2 = await session.execute(select(WorkerHeartbeat).where(WorkerHeartbeat.worker_id == worker_id))
+        hbs = r2.scalars().all()
+        assert len(hbs) == 1
+        assert hbs[0].timestamp == w.last_heartbeat_at
+
+
+# ===========================================================================
+# TEST 8: Reaper reclaims stale jobs and triggers retry
+# ===========================================================================
+from app.worker.reaper import reclaim_stale_jobs
+
+@pytest.mark.asyncio
+async def test_reaper_triggers_retry():
+    async with async_session_factory() as session:
+        _, _, queue, _ = await _create_test_infra(
+            session, concurrency_limit=10,
+            with_retry_policy=True, max_retries=3,
+            backoff_strategy="fixed", backoff_base_seconds=1.0,
+        )
+        worker = await _create_worker(session)
+        now = datetime.now(timezone.utc)
+        
+        job = Job(
+            queue_id=queue.id, status=JobStatus.RUNNING, priority=0,
+            attempt_count=1,
+            claimed_by_worker_id=worker.id,
+            claimed_at=now - timedelta(minutes=10),
+            lease_expires_at=now - timedelta(minutes=5),  # lease expired 5 mins ago
+            scheduled_at=now - timedelta(minutes=10),
+            created_at=now, updated_at=now,
+        )
+        session.add(job)
+        await session.commit()
+        job_id = job.id
+    
+    # Run reaper
+    async with async_session_factory() as session:
+        reclaimed = await reclaim_stale_jobs(session)
+        await session.commit()
+        
+        assert len(reclaimed) == 1
+        assert reclaimed[0] == (job_id, "retrying")
+        
+    # Verify job state
+    async with async_session_factory() as session:
+        r = await session.execute(select(Job).where(Job.id == job_id))
+        j = r.scalar_one()
+        assert j.status == JobStatus.RETRYING
+        assert j.attempt_count == 2
+        assert j.claimed_by_worker_id is None
+        assert j.lease_expires_at is None
+        assert j.scheduled_at > now
+
+
+# ===========================================================================
+# TEST 9: Reaper exhausts retries and moves to DLQ
+# ===========================================================================
+from app.models.dead_letter_entry import DeadLetterEntry
+
+@pytest.mark.asyncio
+async def test_reaper_exhausts_retries():
+    async with async_session_factory() as session:
+        _, _, queue, _ = await _create_test_infra(
+            session, concurrency_limit=10,
+            with_retry_policy=True, max_retries=1, # only 1 retry allowed
+        )
+        worker = await _create_worker(session)
+        now = datetime.now(timezone.utc)
+        
+        job = Job(
+            queue_id=queue.id, status=JobStatus.RUNNING, priority=0,
+            attempt_count=1, # this was attempt 1, so attempting to retry (making it attempt 2) will fail
+            claimed_by_worker_id=worker.id,
+            claimed_at=now - timedelta(minutes=10),
+            lease_expires_at=now - timedelta(minutes=5),
+            scheduled_at=now - timedelta(minutes=10),
+            created_at=now, updated_at=now,
+        )
+        session.add(job)
+        await session.commit()
+        job_id = job.id
+    
+    # Run reaper
+    async with async_session_factory() as session:
+        reclaimed = await reclaim_stale_jobs(session)
+        await session.commit()
+        
+        assert len(reclaimed) == 1
+        assert reclaimed[0] == (job_id, "dead_letter")
+        
+    # Verify job state and DLQ entry
+    async with async_session_factory() as session:
+        r = await session.execute(select(Job).where(Job.id == job_id))
+        j = r.scalar_one()
+        assert j.status == JobStatus.DEAD_LETTER
+        
+        r2 = await session.execute(select(DeadLetterEntry).where(DeadLetterEntry.job_id == job_id))
+        dle = r2.scalar_one()
+        assert "Lease expired" in dle.reason
+
+
+# ===========================================================================
+# TEST 10: Recurring Scheduler creates jobs from active templates
+# ===========================================================================
+from app.worker.recurring_scheduler import schedule_recurring_jobs
+from app.models.recurring_job_template import RecurringJobTemplate
+
+@pytest.mark.asyncio
+async def test_recurring_scheduler():
+    async with async_session_factory() as session:
+        _, _, queue, _ = await _create_test_infra(session, concurrency_limit=10)
+        now = datetime.now(timezone.utc)
+        
+        # Create an active template whose next_run_at is in the past
+        template1 = RecurringJobTemplate(
+            queue_id=queue.id,
+            cron_expression="* * * * *", # every minute
+            job_payload={"test": "1"},
+            is_active=True,
+            next_run_at=now - timedelta(minutes=1),
+            created_at=now,
+            updated_at=now,
+        )
+        
+        # Create an active template whose next_run_at is in the future
+        template2 = RecurringJobTemplate(
+            queue_id=queue.id,
+            cron_expression="* * * * *",
+            job_payload={"test": "2"},
+            is_active=True,
+            next_run_at=now + timedelta(minutes=1),
+            created_at=now,
+            updated_at=now,
+        )
+        
+        # Create an inactive template whose next_run_at is in the past
+        template3 = RecurringJobTemplate(
+            queue_id=queue.id,
+            cron_expression="* * * * *",
+            job_payload={"test": "3"},
+            is_active=False,
+            next_run_at=now - timedelta(minutes=1),
+            created_at=now,
+            updated_at=now,
+        )
+        
+        session.add_all([template1, template2, template3])
+        await session.commit()
+        t1_id = template1.id
+        
+    # Run scheduler
+    async with async_session_factory() as session:
+        created = await schedule_recurring_jobs(session)
+        await session.commit()
+        
+        assert created == 1 # Only template1 should trigger
+        
+    # Verify results
+    async with async_session_factory() as session:
+        r = await session.execute(select(Job).where(Job.queue_id == queue.id))
+        jobs = r.scalars().all()
+        assert len(jobs) == 1
+        assert jobs[0].payload == {"test": "1"}
+        assert jobs[0].status == JobStatus.QUEUED
+        
+        r2 = await session.execute(select(RecurringJobTemplate).where(RecurringJobTemplate.id == t1_id))
+        t1 = r2.scalar_one()
+        assert t1.next_run_at > now
+
+
+# ===========================================================================
+# TEST 11: Recurring Scheduler concurrency safety (SKIP LOCKED)
+# ===========================================================================
+import asyncio
+
+@pytest.mark.asyncio
+async def test_recurring_scheduler_concurrent_ticks():
+    async with async_session_factory() as session:
+        _, _, queue, _ = await _create_test_infra(session, concurrency_limit=10)
+        now = datetime.now(timezone.utc)
+        
+        # Create one active template
+        template = RecurringJobTemplate(
+            queue_id=queue.id,
+            cron_expression="* * * * *",
+            job_payload={"test": "concurrent"},
+            is_active=True,
+            next_run_at=now - timedelta(minutes=1),
+            created_at=now,
+            updated_at=now,
+        )
+        session.add(template)
+        await session.commit()
+    
+    # Run two scheduler ticks concurrently
+    async def concurrent_tick():
+        async with async_session_factory() as session:
+            # Note: the scheduler handles its own internal locking, but we still need to commit
+            created = await schedule_recurring_jobs(session)
+            await session.commit()
+            return created
+            
+    # Gather two concurrent ticks
+    results = await asyncio.gather(
+        concurrent_tick(),
+        concurrent_tick()
+    )
+    
+    # Assert exactly 1 job was created in total
+    assert sum(results) == 1, "Concurrency violation: dual-tick created multiple jobs"
+    
+    # Verify exactly 1 job exists in the DB
+    async with async_session_factory() as session:
+        r = await session.execute(select(Job).where(Job.queue_id == queue.id))
+        jobs = r.scalars().all()
+        assert len(jobs) == 1, "Expected exactly 1 job to be scheduled"
+        assert jobs[0].payload == {"test": "concurrent"}

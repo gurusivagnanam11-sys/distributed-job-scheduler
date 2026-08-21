@@ -165,4 +165,19 @@ async def claim_jobs(
     result = await session.execute(
         sa_select(Job).where(Job.id.in_(claimed_ids))
     )
-    return list(result.scalars().all())
+    jobs = list(result.scalars().all())
+    
+    from app.services.observability import log_job_event
+    for job in jobs:
+        await log_job_event(
+            session=session,
+            job_id=job.id,
+            execution_id=None,
+            level="INFO",
+            message=f"Job {job.id} claimed by worker {worker_id}",
+            worker_id=str(worker_id),
+            queue_id=str(queue_id),
+            attempt=job.attempt_count + 1,
+        )
+        
+    return jobs

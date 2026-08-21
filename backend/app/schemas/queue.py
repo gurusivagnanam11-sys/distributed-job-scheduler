@@ -98,3 +98,11 @@ class QueueStatsResponse(BaseModel):
     failed: int = 0
     retrying: int = 0
     dead_letter: int = 0
+
+
+class QueueMetricsResponse(BaseModel):
+    id: uuid.UUID
+    counts: QueueStatsResponse
+    throughput_24h: int
+    success_rate_24h: float
+    avg_execution_duration_seconds_24h: float

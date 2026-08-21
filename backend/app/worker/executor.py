@@ -96,6 +96,19 @@ async def _execute_single_job(job_id: uuid.UUID, worker_id: uuid.UUID) -> None:
             )
             session.add(execution)
             await session.flush()
+            
+            from app.services.observability import log_job_event
+
+            await log_job_event(
+                session=session,
+                job_id=job.id,
+                execution_id=execution.id,
+                level="INFO",
+                message=f"Started execution attempt {job.attempt_count} for job {job.id}",
+                worker_id=str(worker_id),
+                queue_id=str(job.queue_id),
+                attempt=job.attempt_count,
+            )
 
             # Run the handler
             try:
@@ -109,10 +122,15 @@ async def _execute_single_job(job_id: uuid.UUID, worker_id: uuid.UUID) -> None:
                 execution.finished_at = finished_at
                 execution.result = handler_result
 
-                logger.info(
-                    f"Job {job.id} completed on attempt {job.attempt_count}",
-                    extra={"job_id": str(job.id), "worker_id": str(worker_id),
-                           "queue_id": str(job.queue_id), "attempt": job.attempt_count},
+                await log_job_event(
+                    session=session,
+                    job_id=job.id,
+                    execution_id=execution.id,
+                    level="INFO",
+                    message=f"Job {job.id} completed on attempt {job.attempt_count}",
+                    worker_id=str(worker_id),
+                    queue_id=str(job.queue_id),
+                    attempt=job.attempt_count,
                 )
 
             except Exception as handler_error:
@@ -121,6 +139,17 @@ async def _execute_single_job(job_id: uuid.UUID, worker_id: uuid.UUID) -> None:
                 execution.status = ExecutionStatus.FAILED
                 execution.finished_at = finished_at
                 execution.error = str(handler_error)
+                
+                await log_job_event(
+                    session=session,
+                    job_id=job.id,
+                    execution_id=execution.id,
+                    level="ERROR",
+                    message=f"Execution failed: {str(handler_error)}",
+                    worker_id=str(worker_id),
+                    queue_id=str(job.queue_id),
+                    attempt=job.attempt_count,
+                )
 
                 # Fetch retry policy for this queue
                 retry_policy_result = await session.execute(
@@ -139,22 +168,43 @@ async def _execute_single_job(job_id: uuid.UUID, worker_id: uuid.UUID) -> None:
                     job.lease_expires_at = None
                     job.updated_at = finished_at
 
-                    logger.info(
-                        f"Job {job.id} failed attempt {job.attempt_count}, "
-                        f"retrying in {delay_seconds}s (max {retry_policy.max_retries})",
-                        extra={"job_id": str(job.id), "worker_id": str(worker_id),
-                               "queue_id": str(job.queue_id), "attempt": job.attempt_count},
+                    await log_job_event(
+                        session=session,
+                        job_id=job.id,
+                        execution_id=execution.id,
+                        level="INFO",
+                        message=f"Job {job.id} failed attempt {job.attempt_count}, retrying in {delay_seconds}s (max {retry_policy.max_retries})",
+                        worker_id=str(worker_id),
+                        queue_id=str(job.queue_id),
+                        attempt=job.attempt_count,
                     )
                 else:
-                    # No retries left (or no retry policy): final failure
-                    # DLQ transition is Phase 4B — just set failed for now.
-                    job.status = JobStatus.FAILED
+                    # No retries left (or no retry policy): DLQ transition
+                    job.status = JobStatus.DEAD_LETTER
                     job.updated_at = finished_at
 
-                    logger.warning(
-                        f"Job {job.id} permanently failed after {job.attempt_count} attempts",
-                        extra={"job_id": str(job.id), "worker_id": str(worker_id),
-                               "queue_id": str(job.queue_id), "attempt": job.attempt_count},
+                    # Write DeadLetterEntry row
+                    from app.models.dead_letter_entry import DeadLetterEntry
+                    dle = DeadLetterEntry(
+                        job_id=job.id,
+                        reason=(
+                            f"Execution failed after {job.attempt_count} attempts. "
+                            f"Last error: {str(handler_error)}"
+                        ),
+                        failed_at=finished_at,
+                        original_payload=job.payload,
+                    )
+                    session.add(dle)
+
+                    await log_job_event(
+                        session=session,
+                        job_id=job.id,
+                        execution_id=execution.id,
+                        level="WARNING",
+                        message=f"Job {job.id} moved to dead letter queue after {job.attempt_count} attempts",
+                        worker_id=str(worker_id),
+                        queue_id=str(job.queue_id),
+                        attempt=job.attempt_count,
                     )
 
             await session.commit()

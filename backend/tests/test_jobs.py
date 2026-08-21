@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 import pytest
 import pytest_asyncio
@@ -142,3 +143,31 @@ async def test_pagination_and_filtering(client):
     data = res.json()
     assert data["total"] == 3
     assert len(data["items"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_dedupe_race_condition(client):
+    headers, q_id = await create_user_project_queue(client, "dedupe_race@test.com")
+    
+    # Send 5 requests concurrently with the same dedupe_key
+    async def submit():
+        return await client.post(
+            f"/queues/{q_id}/jobs", 
+            json={"dedupe_key": "race_123", "priority": 1, "payload": {"k": "v"}}, 
+            headers=headers
+        )
+
+    results = await asyncio.gather(*[submit() for _ in range(5)])
+    
+    # They should all succeed (either 201 or 200)
+    for res in results:
+        assert res.status_code in (201, 200), f"Unexpected status: {res.status_code}, {res.text}"
+        
+    # Ensure exactly one 201 was returned, and the rest 200
+    statuses = [res.status_code for res in results]
+    assert statuses.count(201) == 1, f"Expected exactly one 201 Created, got {statuses.count(201)}"
+    assert statuses.count(200) == 4, f"Expected exactly four 200 OK, got {statuses.count(200)}"
+    
+    # They should all return the same job ID
+    job_ids = [res.json()["id"] for res in results]
+    assert len(set(job_ids)) == 1, "Concurrent dedupe submissions returned different job IDs!"

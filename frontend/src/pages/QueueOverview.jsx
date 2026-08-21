@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../components/AuthProvider';
 import { 
-  getQueues, pauseQueue, resumeQueue, getQueueMetrics, getCurrentProject,
+  getQueues, pauseQueue, resumeQueue, getQueueMetrics,
   createQueue, updateQueue, deleteQueue, getRetryPolicy, createRetryPolicy, updateRetryPolicy
 } from '../api/client';
 import { StatusBadge } from '../components/StatusBadge';
@@ -120,7 +121,7 @@ const RetryPolicyModal = ({ queueId, onClose }) => {
 
 export const QueueOverview = () => {
   const queryClient = useQueryClient();
-  const projectId = getCurrentProject();
+  const { currentProjectId: projectId } = useAuth();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingQueue, setEditingQueue] = useState(null);

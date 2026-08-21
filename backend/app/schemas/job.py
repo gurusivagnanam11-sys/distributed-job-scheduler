@@ -115,3 +115,51 @@ class RecurringJobTemplateListResponse(BaseModel):
 
 class RecurringJobTemplateUpdate(BaseModel):
     is_active: Optional[bool] = None
+
+
+# --- Observability Schemas ---
+
+class JobEventResponse(BaseModel):
+    timestamp: datetime
+    event_type: str
+    attempt_number: Optional[int] = None
+    worker_id: Optional[uuid.UUID] = None
+    message: Optional[str] = None
+    
+    model_config = {"from_attributes": True}
+
+
+class JobTimelineResponse(BaseModel):
+    job_id: uuid.UUID
+    events: List[JobEventResponse]
+    
+    
+class JobExecutionResponse(BaseModel):
+    id: uuid.UUID
+    job_id: uuid.UUID
+    worker_id: Optional[uuid.UUID]
+    attempt_number: int
+    status: str
+    started_at: datetime
+    finished_at: Optional[datetime]
+    result: Optional[dict]
+    error: Optional[str]
+    duration_seconds: Optional[float] = None
+    
+    model_config = {"from_attributes": True}
+
+
+class JobExecutionListResponse(BaseModel):
+    items: List[JobExecutionResponse]
+    total: int
+    page: int
+    page_size: int
+
+class JobFailureSummaryResponse(BaseModel):
+    job_id: uuid.UUID
+    execution_id: uuid.UUID
+    attempt_number: int
+    summary: Optional[str]
+    cached: bool
+    raw_error: Optional[str] = None
+    note: Optional[str] = None

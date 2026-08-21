@@ -175,8 +175,8 @@ async def create_api_key(
     raw_key = f"jsk_{secrets.token_hex(32)}"
     key_prefix = raw_key[:12]  # "jsk_" + first 8 hex chars
 
-    from passlib.hash import sha256_crypt
-    key_hash = sha256_crypt.hash(raw_key)
+    from passlib.hash import pbkdf2_sha256
+    key_hash = pbkdf2_sha256.hash(raw_key)
 
     now = datetime.now(timezone.utc)
     api_key = ApiKey(

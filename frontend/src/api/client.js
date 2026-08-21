@@ -1,4 +1,5 @@
 const API_BASE_URL = 'http://localhost:8000';
+const CURRENT_PROJECT_STORAGE_KEY = 'jobscheduler.currentProject';
 
 let authToken = null;
 let currentProject = null;
@@ -13,10 +14,33 @@ export const getAuthToken = () => {
 
 export const setCurrentProject = (projectId) => {
   currentProject = projectId;
+  try {
+    if (projectId) {
+      window.localStorage.setItem(CURRENT_PROJECT_STORAGE_KEY, projectId);
+    } else {
+      window.localStorage.removeItem(CURRENT_PROJECT_STORAGE_KEY);
+    }
+  } catch (error) {
+    // Ignore storage failures and keep the in-memory value.
+  }
 };
 
 export const getCurrentProject = () => {
-  return currentProject;
+  if (currentProject) {
+    return currentProject;
+  }
+
+  try {
+    const storedProject = window.localStorage.getItem(CURRENT_PROJECT_STORAGE_KEY);
+    if (storedProject) {
+      currentProject = storedProject;
+      return storedProject;
+    }
+  } catch (error) {
+    // Ignore storage failures.
+  }
+
+  return null;
 };
 
 export class ApiError extends Error {
@@ -24,6 +48,33 @@ export class ApiError extends Error {
     super(message);
     this.status = status;
   }
+}
+
+async function readErrorMessage(response) {
+  let errorMessage = response.statusText;
+  try {
+    const errorData = await response.json();
+    if (errorData?.error?.message) {
+      errorMessage = errorData.error.message;
+    } else if (errorData?.detail) {
+      if (typeof errorData.detail === 'string') {
+        errorMessage = errorData.detail;
+      } else if (Array.isArray(errorData.detail)) {
+        errorMessage = errorData.detail
+          .map((item) => {
+            const location = Array.isArray(item.loc) ? item.loc.join('.') : '';
+            const message = item.msg || 'Validation error';
+            return location ? `${location}: ${message}` : message;
+          })
+          .join('; ');
+      } else {
+        errorMessage = JSON.stringify(errorData.detail);
+      }
+    }
+  } catch (e) {
+    // Not JSON or unreadable body
+  }
+  return errorMessage;
 }
 
 async function fetchWithAuth(endpoint, options = {}) {
@@ -46,20 +97,8 @@ async function fetchWithAuth(endpoint, options = {}) {
       // Trigger a custom event to tell the AuthProvider to logout
       window.dispatchEvent(new Event('auth:unauthorized'));
     }
-    
-    let errorMessage = response.statusText;
-    try {
-      const errorData = await response.json();
-      if (errorData.error && errorData.error.message) {
-        errorMessage = errorData.error.message;
-      } else if (errorData.detail) {
-        errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
-      }
-    } catch (e) {
-      // Not JSON
-    }
-    
-    throw new ApiError(response.status, errorMessage);
+
+    throw new ApiError(response.status, await readErrorMessage(response));
   }
 
   if (response.status === 204) {
@@ -79,12 +118,21 @@ export const login = async (email, password) => {
   });
 
   if (!response.ok) {
-    let errorMessage = response.statusText;
-    try {
-      const errorData = await response.json();
-      if (errorData.detail) errorMessage = errorData.detail;
-    } catch (e) {}
-    throw new ApiError(response.status, errorMessage);
+    throw new ApiError(response.status, await readErrorMessage(response));
+  }
+
+  return response.json();
+};
+
+export const signup = async (email, password, organization_name) => {
+  const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, organization_name }),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await readErrorMessage(response));
   }
 
   return response.json();

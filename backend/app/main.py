@@ -5,13 +5,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.routers import auth, projects, queues, jobs
+from app.routers import auth, projects, queues, jobs, workers
 
+
+from app.core.logging import setup_logging
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan: startup and shutdown events."""
     # Startup
+    setup_logging()
     yield
     # Shutdown
 
@@ -28,6 +31,7 @@ app.include_router(auth.router)
 app.include_router(projects.router)
 app.include_router(queues.router)
 app.include_router(jobs.router)
+app.include_router(workers.router)
 
 # CORS — allow frontend dev server
 app.add_middleware(

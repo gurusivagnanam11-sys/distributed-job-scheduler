@@ -205,6 +205,83 @@ async def get_queue_stats(
     )
 
 
+from datetime import timedelta
+from app.schemas.queue import QueueMetricsResponse
+from app.models.job_execution import JobExecution, ExecutionStatus
+
+@router.get("/queues/{id}/metrics", response_model=QueueMetricsResponse)
+async def get_queue_metrics(
+    id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    queue = await _get_queue_for_org(id, current_user.organization_id, db)
+    
+    # 1. Current Stats (same as /stats)
+    stats_result = await db.execute(
+        select(Job.status, func.count(Job.id))
+        .where(Job.queue_id == queue.id)
+        .group_by(Job.status)
+    )
+    counts = dict(stats_result.all())
+    stats = QueueStatsResponse(
+        queued=counts.get(JobStatus.QUEUED, 0),
+        scheduled=counts.get(JobStatus.SCHEDULED, 0),
+        claimed=counts.get(JobStatus.CLAIMED, 0),
+        running=counts.get(JobStatus.RUNNING, 0),
+        completed=counts.get(JobStatus.COMPLETED, 0),
+        failed=counts.get(JobStatus.FAILED, 0),
+        retrying=counts.get(JobStatus.RETRYING, 0),
+        dead_letter=counts.get(JobStatus.DEAD_LETTER, 0),
+    )
+    
+    now = datetime.now(timezone.utc)
+    window_start = now - timedelta(hours=24)
+    
+    # 2. Throughput & Success Rate over last 24h
+    metrics_result = await db.execute(
+        select(Job.status, func.count(Job.id))
+        .where(
+            Job.queue_id == queue.id,
+            Job.status.in_([JobStatus.COMPLETED, JobStatus.DEAD_LETTER]),
+            Job.updated_at >= window_start
+        )
+        .group_by(Job.status)
+    )
+    metrics_counts = dict(metrics_result.all())
+    completed_24h = metrics_counts.get(JobStatus.COMPLETED, 0)
+    dlq_24h = metrics_counts.get(JobStatus.DEAD_LETTER, 0)
+    
+    success_rate = 0.0
+    total_terminal = completed_24h + dlq_24h
+    if total_terminal > 0:
+        success_rate = completed_24h / total_terminal
+        
+    # 3. Avg Execution Duration (completed executions only) over last 24h
+    # Need to join JobExecution to Job to filter by queue_id
+    avg_result = await db.execute(
+        select(func.avg(
+            func.extract('epoch', JobExecution.finished_at) - func.extract('epoch', JobExecution.started_at)
+        ))
+        .join(Job, Job.id == JobExecution.job_id)
+        .where(
+            Job.queue_id == queue.id,
+            JobExecution.status == ExecutionStatus.COMPLETED,
+            JobExecution.finished_at >= window_start
+        )
+    )
+    avg_dur = avg_result.scalar_one_or_none()
+    avg_dur_val = float(avg_dur) if avg_dur is not None else 0.0
+
+    return QueueMetricsResponse(
+        id=queue.id,
+        counts=stats,
+        throughput_24h=completed_24h,
+        success_rate_24h=success_rate,
+        avg_execution_duration_seconds_24h=avg_dur_val,
+    )
+
+
 # --- Retry Policies ---
 
 @router.post("/queues/{id}/retry-policy", response_model=RetryPolicyResponse, status_code=status.HTTP_201_CREATED)

@@ -1,3 +1,8 @@
+# Simple System Architecture
+
+This document provides a high-level, simplified architectural overview of the **Distributed Job Scheduler** system.
+
+```mermaid
 flowchart LR
 
     %% =====================================================
@@ -138,3 +143,6 @@ flowchart LR
     class QUEUE,RETRY,CRON,REAPER feature
     class DLQ failure
     class OBS success
+```
+
+For the detailed technical deep-dive and locking mechanics, see [ARCHITECTURE.md](./ARCHITECTURE.md).

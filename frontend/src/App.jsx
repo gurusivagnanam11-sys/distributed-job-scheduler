@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './components/AuthProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
+import { Signup } from './pages/Signup';
 import { JobExplorer } from './pages/JobExplorer';
 import { JobDetail } from './pages/JobDetail';
 import { QueueOverview } from './pages/QueueOverview';
@@ -24,6 +25,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/signup" element={isAuthenticated ? <Navigate to="/" replace /> : <Signup />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<JobExplorer />} />
         <Route path="jobs/:id" element={<JobDetail />} />

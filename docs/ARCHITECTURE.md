@@ -1,9 +1,8 @@
 # Architecture
 
-![Architecture Diagram](ARCHITECTURE.png)
+This document describes how the Distributed Job Scheduler fits together in practice, including the API layer, PostgreSQL coordination, distributed workers, scheduling, retries, recovery, authentication, and observability.
 
-This document describes how the current system fits together in practice, based on the live worker implementation in:
-
+Based on the live worker implementation in:
 - `backend/app/worker/main.py`
 - `backend/app/worker/claim.py`
 - `backend/app/worker/executor.py`
@@ -11,82 +10,43 @@ This document describes how the current system fits together in practice, based 
 - `backend/app/worker/recurring_scheduler.py`
 - `backend/app/worker/heartbeat.py`
 
-For the rationale behind some of the locking and auth choices, see:
+For the rationale behind locking and auth choices, see:
+- [Design Decisions](DESIGN_DECISIONS.md)
+- [ER Diagram](ER_DIAGRAM.md)
 
-- [Design Decisions](./DESIGN_DECISIONS.md)
-- [ER Diagram](./ER_DIAGRAM.md)
+## High-Level Architecture
 
-## System View
+![Distributed Job Scheduler Architecture](ARCHITECTURE.png)
 
-```mermaid
-flowchart TD
-    FE["Frontend<br/>React + Vite dashboard"]
-    API["FastAPI API layer"]
-    DB[(PostgreSQL)]
+The system follows a PostgreSQL-coordinated distributed worker architecture.
 
-    subgraph WP[Worker process]
-        MAIN["main.py<br/>worker entrypoint"]
-        POLL["claim loop<br/>poll active queues"]
-        EXEC["executor.py<br/>execute claimed jobs"]
-        HB[heartbeat loop]
-        REAPER[reaper loop]
-        RS[recurring-scheduler loop]
-    end
+At a high level:
 
-    SUBMIT["Job submission<br/>immediate / delayed / scheduled / recurring / batch"]
-    CLAIM["claim_jobs()<br/>atomic claim + lease"]
-    RUN["Job execution<br/>running -> completed / retrying / dead_letter"]
-    STALE[Stale lease detected]
-    RETRY[Retry with backoff]
-    DLQ[Dead Letter Queue]
-    MANUAL["Manual retry<br/>API / dashboard"]
-    RECUR["Recurring template<br/>next_run_at reached"]
-    HEART[Worker heartbeat]
+**React Dashboard / External Clients → FastAPI → PostgreSQL → Worker Cluster → Job Execution**
 
-    FE -->|JWT for dashboard actions| API
-    EXT["External submission client<br/>X-API-Key"] --> API
+PostgreSQL acts as the source of truth and coordination layer. Multiple workers can safely operate against the same database using row-level locking and `SKIP LOCKED`.
 
-    API --> SUBMIT --> DB
-    API -->|read job / queue / worker views| DB
+## Detailed Architecture
 
-    DB --> MAIN
-    MAIN --> POLL
-    MAIN --> HB
-    MAIN --> REAPER
-    MAIN --> RS
+![Detailed Architecture](ARCHITECTURE_DETAILED.png)
 
-    POLL --> CLAIM --> DB
-    CLAIM -->|queued / scheduled / retrying| RUN
-    RUN --> DB
-
-    RUN -->|success| DONE[completed]
-    RUN -->|failure with retries left| RETRY --> DB
-    RUN -->|retries exhausted| DLQ --> DB
-    DLQ --> MANUAL --> DB
-
-    REAPER --> STALE --> RETRY
-    REAPER --> STALE --> DLQ
-
-    RS --> RECUR --> DB
-    HEART --> DB
-
-    DB --> FE
-```
+The detailed diagram shows the worker execution, scheduling, retry, dead-letter, lease-recovery, and observability flows.
 
 ## Request Flow
 
-### Submission path
+### Submission Path
 
 1. A dashboard user or external client submits a job through the FastAPI API.
-2. The frontend uses JWT, while external submission clients use `X-API-Key`.
-3. The submission router resolves the target org/project, validates queue ownership, and writes the job-related rows into PostgreSQL.
-4. Immediate jobs are stored as `queued`, delayed/scheduled jobs are stored as `scheduled`, and recurring definitions create `RecurringJobTemplate` rows.
-5. Batch submission creates multiple `Job` rows in one request.
-6. Dedupe is enforced at submission time, so a matching in-flight job returns the existing row instead of creating duplicates.
+2. Dashboard requests use JWT authentication, while external submission clients use `X-API-Key`.
+3. The submission router resolves the target organization/project, validates queue ownership, and writes the job-related rows into PostgreSQL.
+4. Immediate jobs are stored as `queued`, while delayed/scheduled jobs use the `scheduled_at` field.
+5. Recurring definitions create `RecurringJobTemplate` rows.
+6. Batch submission creates multiple `Job` rows in one request.
+7. Dedupe is enforced at submission time to prevent duplicate in-flight jobs.
 
-The API is the entry point, but PostgreSQL is the source of truth for the job state machine.
+PostgreSQL is the source of truth for job state.
 
-### Claim and execution path
+### Claim and Execution Path
 
 1. The worker process polls active queues in its main loop.
 2. For each queue, `claim_jobs()` runs inside a single transaction.
@@ -95,16 +55,16 @@ The API is the entry point, but PostgreSQL is the source of truth for the job st
 5. The worker then dispatches the claimed jobs to `execute_jobs()`.
 6. Each job executes in its own database session, transitions to `running`, creates a `JobExecution` row, and then records either completion, retry scheduling, or DLQ placement.
 
-The locking rationale is described in more detail in [Design Decisions](./DESIGN_DECISIONS.md); this document keeps the focus on flow rather than re-arguing the trade-off.
+The locking rationale is described in more detail in [Design Decisions](DESIGN_DECISIONS.md); this document keeps the focus on flow rather than re-arguing the trade-off.
 
 ## Worker Process Internals
 
 The worker is one standalone process, but it runs four independent async loops alongside the main polling loop:
 
-- Claim/execute loop: polls active queues, claims jobs, and launches execution tasks.
-- Heartbeat loop: updates the worker record and inserts `WorkerHeartbeat` rows.
-- Reaper loop: reclaims stale leases and applies the same retry/DLQ outcome logic used by normal execution failures.
-- Recurring-scheduler loop: creates new `Job` rows from active recurring templates when `next_run_at` is due.
+- **Claim/execute loop**: polls active queues, claims jobs, and launches execution tasks.
+- **Heartbeat loop**: updates the worker record and inserts `WorkerHeartbeat` rows.
+- **Reaper loop**: reclaims stale leases and applies the same retry/DLQ outcome logic used by normal execution failures.
+- **Recurring-scheduler loop**: creates new `Job` rows from active recurring templates when `next_run_at` is due.
 
 Each loop has its own interval from settings and can be tested independently because the core work is split into standalone functions:
 
@@ -136,19 +96,17 @@ The recurring scheduler creates new jobs into the queue, which then follow the s
 
 ## Failure Handling
 
-### Normal execution failure
+### Normal Execution Failure
 
 When a job handler raises an exception:
 
 1. The executor writes a failed `JobExecution` record.
 2. It looks up the queue retry policy.
 3. If retries remain, the job moves to `retrying`.
-4. The next run time is pushed forward using the configured backoff strategy.
+4. The next run time is pushed forward using the configured backoff strategy (fixed, linear, or exponential).
 5. If retries are exhausted, the job moves to `dead_letter` and a `DeadLetterEntry` row is written.
 
-The retry backoff strategy is fixed/linear/exponential depending on the queue policy, and the concrete delay computation lives in the retry service.
-
-### Reaper path
+### Reaper Path
 
 If a worker disappears or stalls, the lease expires:
 
@@ -158,7 +116,7 @@ If a worker disappears or stalls, the lease expires:
 
 So the reaper does not invent a separate recovery model. It feeds the same retry and dead-letter outcomes from a different trigger condition: stale lease instead of handler exception.
 
-### Manual retry
+### Manual Retry
 
 Jobs in the dead-letter queue can be retried manually from the API or dashboard.
 
@@ -180,15 +138,15 @@ If some executing tasks do not finish before the timeout, they are abandoned and
 
 There are two independent authentication paths:
 
-- JWT for the human dashboard and general org-scoped API usage.
-- `X-API-Key` for external job submission clients.
+- **JWT** for the human dashboard and general org-scoped API usage.
+- **`X-API-Key`** for external job submission clients.
 
 Job submission accepts either credential type:
 
 - JWT is org-scoped.
 - API keys are project-scoped, which is stricter than JWT.
 
-That split keeps dashboard access and machine-to-machine submission separate without making submission clients carry user credentials. See [Design Decisions](./DESIGN_DECISIONS.md) for the reasoning behind the split.
+That split keeps dashboard access and machine-to-machine submission separate without making submission clients carry user credentials. See [Design Decisions](DESIGN_DECISIONS.md) for the reasoning behind the split.
 
 ## Horizontal Scaling
 
@@ -205,5 +163,5 @@ So the system does not rely on a single worker being present. Adding workers inc
 
 ## Where To Look Next
 
-- [ER Diagram](./ER_DIAGRAM.md) for the current schema and relationships.
-- [Design Decisions](./DESIGN_DECISIONS.md) for the rationale behind claim locking, retry semantics, and auth scope.
+- [ER Diagram](ER_DIAGRAM.md) — current schema and relationships.
+- [Design Decisions](DESIGN_DECISIONS.md) — rationale behind claim locking, retry semantics, and auth scope.

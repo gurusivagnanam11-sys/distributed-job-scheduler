@@ -134,7 +134,7 @@ the accepted trade-off — document it, don't apologize for it).
 
 ## 9. Current Status (UPDATE THIS SECTION AS WORK PROGRESSES)
 
-**Last updated by:** Codex — 2026-08-21
+**Last updated by:** Antigravity — 2026-08-21
 
 | Phase | Status | Notes |
 |---|---|---|
@@ -143,12 +143,16 @@ the accepted trade-off — document it, don't apologize for it).
 | 2 — Queues & Retry Policies | ✅ Done | Queue CRUD, Pause/Resume, Retry Policies, Queue Stats. Queue deletion is blocked (409) if active non-terminal jobs exist. Duplicate retry policy POST returns 409. |
 | 3 — Job Submission API | ✅ Done | Immediate, Delayed, Scheduled, Recurring, and Batch submission under `POST /queues/{id}/jobs`. Dedupe returns 200 (existing) for non-terminal matches. Note: "Delayed" and "Scheduled" use the exact same DB mechanism. Recurring jobs spawn `RecurringJobTemplate` records. |
 | 4A — Claim + Execute | ✅ Done | Atomic claim via `SELECT FOR UPDATE` on queue row + `FOR UPDATE SKIP LOCKED` on jobs. Concurrent execution via `asyncio.gather` with per-job sessions. Retry reuses Phase 2 `compute_delay()`. Concurrent-claim test verified under real contention (5 workers, failed on naive first attempt, fixed with queue-row lock). |
-| 4B — Heartbeat/Reclaim/DLQ/Idempotency | Not started | Idempotency mechanism not yet decided — see §6 |
-| 5 — Observability | Not started | |
-| 6 — Frontend Dashboard | Not started | |
-| 7 — Bonus (workflow deps) | Not started | |
+| 4B — Heartbeat/Reclaim/DLQ/Idempotency | ✅ Done | Idempotency contract defined. Worker Heartbeat loop implemented. Reaper loop implemented for DLQ/retry transitions. Graceful shutdown (SIGTERM) with timeout. Recurring Scheduler wiring added. All 33 tests passing. |
+| 5 — Observability | ✅ Done | Centralized structured logging via `log_job_event` (with `execution_id=None` support for claims). Added `/jobs/{id}/timeline`, `/jobs/{id}/executions`, and `/queues/{id}/metrics` endpoints. 5/5 tests passing. |
+| 6 — Frontend Dashboard | ✅ Done | Built React (Vite) dashboard with Project Management (create/switch), Queue Management (create/edit/delete, retry policy modal), Job Explorer (submit job modal for immediate/delayed/recurring/batch, dead-letter quick filter), Worker Status, and Project Settings (API key management). Verified backend pause/resume behavior via integration test. Auth is in-memory only. |
+| 6 — Frontend Dashboard | ✅ Done | Added `/signup` with backend-backed account creation, login/signup cross-links, and auto-login redirect on successful signup. Validation and conflict errors are surfaced in the form UI. |
+| 6 — Frontend Dashboard | ✅ Done | Made current project selection reactive and persisted so project creation/switching reliably refreshes project-dependent pages. |
+| 7 — Bonus (failure summaries) | ✅ Done | Added `/jobs/{id}/failure-summary` endpoint. Generates plain-English summaries of failed job executions using Gemini / Claude. Caches results in `JobExecution.ai_failure_summary`. Graceful degradation to returning raw error on LLM failure or timeout. Displayed in a new panel in `JobDetail.jsx`. 3/3 tests passing. |
 | 8 — Docs | ✅ Done | `ARCHITECTURE.md`, `ER_DIAGRAM.md`, `API.md`, `DESIGN_DECISIONS.md`, and `CONTEXT.md` completed. Design decisions now include a summary table, dedupe verification note, queue-scaling clarification, and an idempotency explanation. |
-| 9 — Tests | Not started | Concurrent-claim test is highest priority — write alongside 4A, not after |
+| 9 — Tests | ✅ Done | 51/51 backend unit and integration tests passing. Concurrency, atomic claim, reaper race prevention, worker heartbeats, retry backoffs, API key auth, and observability tests verified. |
+| API Key Auth | ✅ Done | `X-API-Key` header accepted on `POST /queues/{id}/jobs`. Project-scoped (stricter than JWT org-scoping). 6/6 tests passing. See `app/core/security.py::get_submitter_org_id`. |
+| Pre-upload Checklist | ✅ Done | All 25 items on the pre-upload checklist verified and confirmed working. |
 
 **Known open decisions:**
 - Idempotency mechanism (§6) — Resolved: Dedupe key checks against active jobs in the queue for scheduling. Execution-attempt tracking via `JobExecution` rows for execution.
