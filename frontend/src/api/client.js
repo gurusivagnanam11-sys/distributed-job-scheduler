@@ -169,6 +169,13 @@ export const getQueueMetrics = async (queueId) => {
 
 // --- Job API ---
 
+export const submitJob = async (queueId, data) => {
+  return fetchWithAuth(`/queues/${queueId}/jobs`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
 export const getJobs = async (queueId, page = 1, pageSize = 20, status = null) => {
   let url = `/queues/${queueId}/jobs?page=${page}&page_size=${pageSize}`;
   if (status) {
