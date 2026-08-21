@@ -87,6 +87,7 @@ export const Layout = () => {
               <Plus size={16} /> Create Project
             </button>
           ) : (
+            <>
               <select 
                 value={currentProjectId || ''} 
                 onChange={handleProjectChange}
@@ -97,7 +98,6 @@ export const Layout = () => {
                 ))}
                 <option value="new">-- Create New Project --</option>
               </select>
-            </div>
             
             {currentProjectId && (
               <div style={{ marginTop: '0.5rem' }}>
