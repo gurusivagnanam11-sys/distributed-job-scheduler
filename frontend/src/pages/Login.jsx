@@ -29,7 +29,7 @@ export const Login = () => {
         
         {/* Demo Credentials Helper Banner */}
         <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', padding: '0.75rem', borderRadius: '6px', marginBottom: '1.25rem' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: '600', color: '#1e40af', marginBottom: '0.25rem' }}>⚡ DEMO PRESET AVAILABLE</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: '600', color: '#1e40af', marginBottom: '0.25rem' }}>DEMO PRESET AVAILABLE</div>
           <div style={{ fontSize: '0.75rem', color: '#1e3a8a', marginBottom: '0.5rem' }}>
             Pre-loaded with sample queues, jobs, & AI summaries.
           </div>
