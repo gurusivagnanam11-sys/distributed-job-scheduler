@@ -217,9 +217,6 @@ export const retryJob = async (jobId) => {
   return fetchWithAuth(`/jobs/${jobId}/retry`, { method: 'POST' });
 };
 
-export const getJob = async (jobId) => {
-  return fetchWithAuth(`/jobs/${jobId}`);
-};
 
 export const getJobFailureSummary = async (jobId) => {
   return fetchWithAuth(`/jobs/${jobId}/failure-summary`);
