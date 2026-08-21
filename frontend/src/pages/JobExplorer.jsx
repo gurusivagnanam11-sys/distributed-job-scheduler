@@ -205,16 +205,24 @@ export const JobExplorer = () => {
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#4b5563', marginBottom: '0.25rem' }}>Status</label>
-          <select 
-            value={selectedStatus} 
-            onChange={(e) => { setSelectedStatus(e.target.value); setPage(1); }}
-            style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', minWidth: '150px' }}
-          >
-            <option value="">All Statuses</option>
-            {JOB_STATUSES.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <select 
+              value={selectedStatus} 
+              onChange={(e) => { setSelectedStatus(e.target.value); setPage(1); }}
+              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', minWidth: '150px' }}
+            >
+              <option value="">All Statuses</option>
+              {JOB_STATUSES.map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            <button 
+              onClick={() => { setSelectedStatus('dead_letter'); setPage(1); }}
+              style={{ padding: '0.5rem 1rem', backgroundColor: selectedStatus === 'dead_letter' ? '#fee2e2' : 'white', color: selectedStatus === 'dead_letter' ? '#b91c1c' : '#4b5563', border: `1px solid ${selectedStatus === 'dead_letter' ? '#fca5a5' : '#d1d5db'}`, borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}
+            >
+              Show Dead Letter
+            </button>
+          </div>
         </div>
       </div>
 
