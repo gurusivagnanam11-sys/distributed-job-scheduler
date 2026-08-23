@@ -74,19 +74,19 @@ const SubmitJobModal = ({ queueId, onClose }) => {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-      <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-        <h2 style={{ marginTop: 0, marginBottom: '1.5rem' }}>Submit Job</h2>
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+      <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px', width: '520px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+        <h2 style={{ marginTop: 0, marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: '700' }}>Submit Job</h2>
 
         {errorMsg && (
-          <div style={{ backgroundColor: '#fef2f2', color: '#b91c1c', padding: '0.75rem', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.875rem' }}>
+          <div style={{ backgroundColor: '#ffe4e6', color: '#9f1239', border: '1px solid #fecdd3', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.85rem', fontWeight: '500' }}>
             {errorMsg}
           </div>
         )}
 
         <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Job Type</label>
-          <select value={jobType} onChange={e => setJobType(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }}>
+          <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>Job Type</label>
+          <select value={jobType} onChange={e => setJobType(e.target.value)} style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}>
             <option value="immediate">Immediate</option>
             <option value="delayed">Delayed / Scheduled</option>
             <option value="recurring">Recurring</option>
@@ -97,39 +97,39 @@ const SubmitJobModal = ({ queueId, onClose }) => {
         {jobType !== 'batch' && (
           <>
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Priority (higher = more urgent)</label>
-              <input type="number" value={priority} onChange={e => setPriority(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }} />
+              <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>Priority (higher = more urgent)</label>
+              <input type="number" value={priority} onChange={e => setPriority(e.target.value)} style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }} />
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Dedupe Key (Optional)</label>
-              <input type="text" value={dedupeKey} onChange={e => setDedupeKey(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }} placeholder="e.g. daily_report_2026_08_21" />
+              <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>Dedupe Key (Optional)</label>
+              <input type="text" value={dedupeKey} onChange={e => setDedupeKey(e.target.value)} style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }} placeholder="e.g. daily_report_2026_08_21" />
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Depends On Job ID (Optional)</label>
-              <input type="text" value={dependsOn} onChange={e => setDependsOn(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }} placeholder="UUID of dependency" />
+              <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>Depends On Job ID (Optional)</label>
+              <input type="text" value={dependsOn} onChange={e => setDependsOn(e.target.value)} style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }} placeholder="UUID of dependency" />
             </div>
           </>
         )}
 
         {jobType === 'delayed' && (
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Scheduled At</label>
-            <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }} />
+            <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>Scheduled At</label>
+            <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }} />
           </div>
         )}
 
         {jobType === 'recurring' && (
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Cron Expression</label>
-            <input type="text" value={cronExpression} onChange={e => setCronExpression(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }} placeholder="* * * * *" />
+            <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>Cron Expression</label>
+            <input type="text" value={cronExpression} onChange={e => setCronExpression(e.target.value)} style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }} placeholder="* * * * *" />
           </div>
         )}
 
         {jobType === 'batch' ? (
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>
               Batch Payloads
             </label>
             {batchPayloads.map((payload, idx) => (
@@ -141,7 +141,7 @@ const SubmitJobModal = ({ queueId, onClose }) => {
                     newPayloads[idx] = e.target.value;
                     setBatchPayloads(newPayloads);
                   }}
-                  style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', minHeight: '60px', fontFamily: 'monospace', fontSize: '0.875rem' }} 
+                  style={{ flex: 1, padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', minHeight: '60px', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }} 
                 />
                 <button 
                   onClick={() => {
@@ -149,7 +149,7 @@ const SubmitJobModal = ({ queueId, onClose }) => {
                     setBatchPayloads(newPayloads);
                   }}
                   disabled={batchPayloads.length === 1}
-                  style={{ padding: '0.5rem', backgroundColor: '#fee2e2', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '4px', cursor: batchPayloads.length === 1 ? 'not-allowed' : 'pointer', flexShrink: 0 }}
+                  style={{ padding: '0.55rem 0.75rem', backgroundColor: '#ffe4e6', color: '#9f1239', border: '1px solid #fecdd3', borderRadius: '8px', cursor: batchPayloads.length === 1 ? 'not-allowed' : 'pointer', flexShrink: 0, fontSize: '0.825rem', fontWeight: '500' }}
                 >
                   Remove
                 </button>
@@ -157,28 +157,28 @@ const SubmitJobModal = ({ queueId, onClose }) => {
             ))}
             <button 
               onClick={() => setBatchPayloads([...batchPayloads, '{}'])}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', backgroundColor: '#f3f4f6', color: '#4b5563', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '500' }}
             >
               <Plus size={16} /> Add Job to Batch
             </button>
           </div>
         ) : (
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>
               Job Payload (JSON Object)
             </label>
             <textarea 
               value={payloadStr} 
               onChange={e => setPayloadStr(e.target.value)} 
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', minHeight: '120px', fontFamily: 'monospace', fontSize: '0.875rem' }} 
+              style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', minHeight: '120px', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }} 
             />
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-          <button onClick={onClose} style={{ padding: '0.5rem 1rem', backgroundColor: 'white', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-          <button onClick={handleSubmit} disabled={submitMutation.isPending} style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-            {submitMutation.isPending ? 'Submitting...' : 'Submit'}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+          <button onClick={onClose} style={{ padding: '0.6rem 1.25rem', backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', fontWeight: '500', fontSize: '0.875rem' }}>Cancel</button>
+          <button onClick={handleSubmit} disabled={submitMutation.isPending} style={{ padding: '0.6rem 1.25rem', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '0.875rem', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.25)' }}>
+            {submitMutation.isPending ? 'Submitting...' : 'Submit Job'}
           </button>
         </div>
       </div>
@@ -225,29 +225,32 @@ export const JobExplorer = () => {
     onError: (err) => alert(`Retry failed: ${err.message}`)
   });
 
-  if (!projectId) return <div>No project found.</div>;
+  if (!projectId) return <div style={{ color: '#64748b', fontSize: '0.875rem' }}>No project selected.</div>;
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>Job Explorer</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 0.25rem 0', color: '#0f172a' }}>Job Explorer</h1>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>Monitor, inspect, and submit background jobs across queues</p>
+        </div>
         <button 
           onClick={() => setIsSubmitModalOpen(true)}
           disabled={!selectedQueue}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: selectedQueue ? 'pointer' : 'not-allowed', fontWeight: '500', opacity: selectedQueue ? 1 : 0.5 }}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', cursor: selectedQueue ? 'pointer' : 'not-allowed', fontWeight: '600', fontSize: '0.875rem', opacity: selectedQueue ? 1 : 0.5, boxShadow: '0 2px 6px rgba(79, 70, 229, 0.3)' }}
         >
           <Plus size={16} /> Submit Job
         </button>
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', backgroundColor: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+      <div style={{ display: 'flex', gap: '1.25rem', marginBottom: '1.5rem', backgroundColor: '#ffffff', padding: '1.25rem', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', alignItems: 'center' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#4b5563', marginBottom: '0.25rem' }}>Queue</label>
+          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Queue</label>
           <select 
             value={selectedQueue} 
             onChange={(e) => { setSelectedQueue(e.target.value); setPage(1); }}
-            style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', minWidth: '200px' }}
+            style={{ padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', minWidth: '220px', fontSize: '0.875rem' }}
           >
             {queuesData?.items?.map(q => (
               <option key={q.id} value={q.id}>{q.name}</option>
@@ -256,12 +259,12 @@ export const JobExplorer = () => {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#4b5563', marginBottom: '0.25rem' }}>Status</label>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status Filter</label>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <select 
               value={selectedStatus} 
               onChange={(e) => { setSelectedStatus(e.target.value); setPage(1); }}
-              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', minWidth: '150px' }}
+              style={{ padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', minWidth: '160px', fontSize: '0.875rem' }}
             >
               <option value="">All Statuses</option>
               {JOB_STATUSES.map(s => (
@@ -269,8 +272,8 @@ export const JobExplorer = () => {
               ))}
             </select>
             <button 
-              onClick={() => { setSelectedStatus('dead_letter'); setPage(1); }}
-              style={{ padding: '0.5rem 1rem', backgroundColor: selectedStatus === 'dead_letter' ? '#fee2e2' : 'white', color: selectedStatus === 'dead_letter' ? '#b91c1c' : '#4b5563', border: `1px solid ${selectedStatus === 'dead_letter' ? '#fca5a5' : '#d1d5db'}`, borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}
+              onClick={() => { setSelectedStatus(selectedStatus === 'dead_letter' ? '' : 'dead_letter'); setPage(1); }}
+              style={{ padding: '0.55rem 1rem', backgroundColor: selectedStatus === 'dead_letter' ? '#ffe4e6' : '#ffffff', color: selectedStatus === 'dead_letter' ? '#9f1239' : '#475569', border: `1px solid ${selectedStatus === 'dead_letter' ? '#fecdd3' : '#cbd5e1'}`, borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.15s ease' }}
             >
               Show Dead Letter
             </button>
@@ -279,26 +282,26 @@ export const JobExplorer = () => {
       </div>
 
       {/* Table */}
-      <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
         {!selectedQueue ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Please select or create a queue to view jobs.</div>
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b', fontSize: '0.875rem' }}>Please select or create a queue to view jobs.</div>
         ) : isLoading ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Loading jobs...</div>
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b', fontSize: '0.875rem' }}>Loading jobs...</div>
         ) : isError ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444' }}>Error loading jobs</div>
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#e11d48', fontSize: '0.875rem' }}>Error loading jobs</div>
         ) : !jobsData?.items || jobsData.items.length === 0 ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No jobs found matching criteria.</div>
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b', fontSize: '0.875rem' }}>No jobs found matching the selected criteria.</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, textAlign: 'left' }}>
             <thead>
-              <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>ID</th>
-                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>Status</th>
-                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>Priority</th>
-                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>Attempts</th>
-                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>Scheduled At</th>
-                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>Created At</th>
-                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+              <tr style={{ backgroundColor: '#f8fafc' }}>
+                <th style={{ padding: '0.75rem 1.25rem' }}>ID</th>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Status</th>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Priority</th>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Attempts</th>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Scheduled At</th>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Created At</th>
+                <th style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -306,26 +309,26 @@ export const JobExplorer = () => {
                 <tr 
                   key={job.id} 
                   onClick={() => navigate(`/jobs/${job.id}`)}
-                  style={{ borderBottom: '1px solid #e5e7eb', cursor: 'pointer' }}
-                  onMouseOver={e => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                  style={{ borderBottom: '1px solid #e2e8f0', cursor: 'pointer', transition: 'background-color 0.15s ease' }}
+                  onMouseOver={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
                   onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', fontFamily: 'monospace' }}>{job.id.substring(0, 8)}...</td>
-                  <td style={{ padding: '0.75rem 1rem' }}><StatusBadge status={job.status} /></td>
-                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem' }}>{job.priority}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem' }}>{job.attempt_count}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: '#4b5563' }}>
+                  <td style={{ padding: '0.85rem 1.25rem', fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: '#4f46e5', fontWeight: '500' }}>{job.id.substring(0, 8)}...</td>
+                  <td style={{ padding: '0.85rem 1.25rem' }}><StatusBadge status={job.status} /></td>
+                  <td style={{ padding: '0.85rem 1.25rem', fontSize: '0.875rem', fontWeight: '600', color: '#334155' }}>{job.priority}</td>
+                  <td style={{ padding: '0.85rem 1.25rem', fontSize: '0.875rem', color: '#475569' }}>{job.attempt_count}</td>
+                  <td style={{ padding: '0.85rem 1.25rem', fontSize: '0.85rem', color: '#64748b' }}>
                     {format(new Date(job.scheduled_at), 'MMM d, HH:mm:ss')}
                   </td>
-                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: '#4b5563' }}>
+                  <td style={{ padding: '0.85rem 1.25rem', fontSize: '0.85rem', color: '#64748b' }}>
                     {format(new Date(job.created_at), 'MMM d, HH:mm:ss')}
                   </td>
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+                  <td style={{ padding: '0.85rem 1.25rem', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
                     {job.status === 'dead_letter' && (
                       <button 
                         onClick={() => retryJobMutation.mutate(job.id)}
                         disabled={retryJobMutation.isPending}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '500', marginLeft: 'auto' }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.35rem 0.75rem', backgroundColor: '#e0e7ff', color: '#3730a3', border: '1px solid #c7d2fe', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600' }}
                         title="Retry Job"
                       >
                         <RefreshCw size={12} /> Retry
@@ -340,22 +343,22 @@ export const JobExplorer = () => {
         
         {/* Pagination */}
         {jobsData?.total > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderTop: '1px solid #e5e7eb' }}>
-            <div style={{ fontSize: '0.875rem', color: '#4b5563' }}>
-              Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, jobsData.total)} of {jobsData.total} results
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderTop: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
+            <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+              Showing <strong style={{ color: '#0f172a' }}>{((page - 1) * pageSize) + 1}</strong> to <strong style={{ color: '#0f172a' }}>{Math.min(page * pageSize, jobsData.total)}</strong> of <strong style={{ color: '#0f172a' }}>{jobsData.total}</strong> results
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button 
                 disabled={page === 1}
                 onClick={() => setPage(p => p - 1)}
-                style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', background: 'white', cursor: page === 1 ? 'not-allowed' : 'pointer' }}
+                style={{ padding: '0.45rem 0.85rem', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff', color: '#334155', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1, fontSize: '0.85rem', fontWeight: '500' }}
               >
                 Previous
               </button>
               <button 
                 disabled={page * pageSize >= jobsData.total}
                 onClick={() => setPage(p => p + 1)}
-                style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', background: 'white', cursor: page * pageSize >= jobsData.total ? 'not-allowed' : 'pointer' }}
+                style={{ padding: '0.45rem 0.85rem', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff', color: '#334155', cursor: page * pageSize >= jobsData.total ? 'not-allowed' : 'pointer', opacity: page * pageSize >= jobsData.total ? 0.5 : 1, fontSize: '0.85rem', fontWeight: '500' }}
               >
                 Next
               </button>

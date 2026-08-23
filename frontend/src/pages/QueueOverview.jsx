@@ -15,26 +15,26 @@ const QueueMetricsCard = ({ queueId }) => {
     refetchInterval: 5000,
   });
 
-  if (isLoading) return <div style={{ padding: '1rem', color: '#6b7280' }}>Loading metrics...</div>;
-  if (isError) return <div style={{ padding: '1rem', color: '#ef4444' }}>Failed to load metrics</div>;
+  if (isLoading) return <div style={{ padding: '1rem 0', color: '#64748b', fontSize: '0.85rem' }}>Loading metrics...</div>;
+  if (isError) return <div style={{ padding: '1rem 0', color: '#e11d48', fontSize: '0.85rem' }}>Failed to load metrics</div>;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginTop: '1rem', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
-      <div>
-        <div style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase' }}>Queued</div>
-        <div style={{ fontSize: '1.25rem', fontWeight: '600' }}>{data.counts.queued}</div>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginTop: '1.25rem', borderTop: '1px solid #f1f5f9', paddingTop: '1.25rem' }}>
+      <div style={{ backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em' }}>Queued Jobs</div>
+        <div style={{ fontSize: '1.35rem', fontWeight: '700', color: '#0f172a', marginTop: '0.2rem' }}>{data.counts.queued}</div>
       </div>
-      <div>
-        <div style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase' }}>Running</div>
-        <div style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1d4ed8' }}>{data.counts.running}</div>
+      <div style={{ backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em' }}>Running</div>
+        <div style={{ fontSize: '1.35rem', fontWeight: '700', color: '#4f46e5', marginTop: '0.2rem' }}>{data.counts.running}</div>
       </div>
-      <div>
-        <div style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase' }}>24h Throughput</div>
-        <div style={{ fontSize: '1.25rem', fontWeight: '600' }}>{data.throughput_24h}</div>
+      <div style={{ backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em' }}>24h Throughput</div>
+        <div style={{ fontSize: '1.35rem', fontWeight: '700', color: '#0f172a', marginTop: '0.2rem' }}>{data.throughput_24h}</div>
       </div>
-      <div>
-        <div style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase' }}>24h Success Rate</div>
-        <div style={{ fontSize: '1.25rem', fontWeight: '600', color: data.success_rate_24h >= 0.9 ? '#15803d' : '#b91c1c' }}>
+      <div style={{ backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em' }}>24h Success Rate</div>
+        <div style={{ fontSize: '1.35rem', fontWeight: '700', color: data.success_rate_24h >= 0.9 ? '#15803d' : '#9f1239', marginTop: '0.2rem' }}>
           {(data.success_rate_24h * 100).toFixed(1)}%
         </div>
       </div>
@@ -80,18 +80,18 @@ const RetryPolicyModal = ({ queueId, onClose }) => {
   if (isLoading) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-      <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '400px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-        <h2 style={{ marginTop: 0, marginBottom: '1.5rem' }}>Retry Policy</h2>
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+      <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px', width: '420px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+        <h2 style={{ marginTop: 0, marginBottom: '1.25rem', fontSize: '1.25rem', fontWeight: '700' }}>Retry Policy</h2>
         
         <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Max Retries</label>
-          <input type="number" min="0" value={formData.max_retries} onChange={e => setFormData({...formData, max_retries: parseInt(e.target.value)})} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }} />
+          <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>Max Retries</label>
+          <input type="number" min="0" value={formData.max_retries} onChange={e => setFormData({...formData, max_retries: parseInt(e.target.value)})} style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }} />
         </div>
 
         <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Backoff Strategy</label>
-          <select value={formData.backoff_strategy} onChange={e => setFormData({...formData, backoff_strategy: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }}>
+          <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>Backoff Strategy</label>
+          <select value={formData.backoff_strategy} onChange={e => setFormData({...formData, backoff_strategy: e.target.value})} style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}>
             <option value="fixed">Fixed</option>
             <option value="linear">Linear</option>
             <option value="exponential">Exponential</option>
@@ -99,19 +99,19 @@ const RetryPolicyModal = ({ queueId, onClose }) => {
         </div>
 
         <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Base Seconds</label>
-          <input type="number" min="1" value={formData.backoff_base_seconds} onChange={e => setFormData({...formData, backoff_base_seconds: parseInt(e.target.value)})} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }} />
+          <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>Base Seconds</label>
+          <input type="number" min="1" value={formData.backoff_base_seconds} onChange={e => setFormData({...formData, backoff_base_seconds: parseInt(e.target.value)})} style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }} />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Max Seconds</label>
-          <input type="number" min="1" value={formData.backoff_max_seconds} onChange={e => setFormData({...formData, backoff_max_seconds: parseInt(e.target.value)})} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }} />
+          <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>Max Seconds</label>
+          <input type="number" min="1" value={formData.backoff_max_seconds} onChange={e => setFormData({...formData, backoff_max_seconds: parseInt(e.target.value)})} style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }} />
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-          <button onClick={onClose} style={{ padding: '0.5rem 1rem', backgroundColor: 'white', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-          <button onClick={() => saveMutation.mutate(formData)} disabled={saveMutation.isPending} style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-            Save
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+          <button onClick={onClose} style={{ padding: '0.6rem 1.25rem', backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', fontWeight: '500', fontSize: '0.875rem' }}>Cancel</button>
+          <button onClick={() => saveMutation.mutate(formData)} disabled={saveMutation.isPending} style={{ padding: '0.6rem 1.25rem', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '0.875rem', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.25)' }}>
+            Save Policy
           </button>
         </div>
       </div>
@@ -176,17 +176,20 @@ export const QueueOverview = () => {
     setQueueForm({ name: queue.name, concurrency_limit: queue.concurrency_limit });
   };
 
-  if (!projectId) return <div>No project selected or found.</div>;
-  if (isLoading) return <div>Loading queues...</div>;
-  if (isError) return <div style={{ color: 'red' }}>Error loading queues</div>;
+  if (!projectId) return <div style={{ color: '#64748b', fontSize: '0.875rem' }}>No project selected or found.</div>;
+  if (isLoading) return <div style={{ color: '#64748b', fontSize: '0.875rem', padding: '2rem', textAlign: 'center' }}>Loading queues...</div>;
+  if (isError) return <div style={{ color: '#e11d48', fontSize: '0.875rem', padding: '2rem', textAlign: 'center' }}>Error loading queues</div>;
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>Queue Overview</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 0.25rem 0', color: '#0f172a' }}>Queue Overview</h1>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>Manage queue concurrency limits, retry policies, and pause/resume states</p>
+        </div>
         <button 
           onClick={() => { setQueueForm({ name: '', concurrency_limit: 10 }); setIsCreateModalOpen(true); }}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '0.875rem', boxShadow: '0 2px 6px rgba(79, 70, 229, 0.3)' }}
         >
           <Plus size={16} /> Create Queue
         </button>
@@ -194,61 +197,61 @@ export const QueueOverview = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
         {queuesData?.items?.length === 0 ? (
-          <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+          <div style={{ padding: '3rem', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.875rem' }}>
             No queues found. Create one to get started.
           </div>
         ) : (
           queuesData.items.map(queue => (
-            <div key={queue.id} style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb', padding: '1.5rem', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+            <div key={queue.id} style={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                    <h2 style={{ margin: 0, fontSize: '1.25rem' }}>{queue.name}</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '0.4rem' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '700', color: '#0f172a' }}>{queue.name}</h2>
                     <StatusBadge status={queue.status} />
                   </div>
-                  <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-                    Concurrency Limit: <strong>{queue.concurrency_limit}</strong>
+                  <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                    Concurrency Limit: <strong style={{ color: '#334155' }}>{queue.concurrency_limit}</strong>
                   </div>
                 </div>
                 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   <button 
                     onClick={() => setRetryPolicyQueueId(queue.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', color: '#4b5563', border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', background: 'white' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', background: '#ffffff', fontSize: '0.825rem', fontWeight: '500' }}
                     title="Retry Policy"
                   >
-                    <Settings size={16} />
+                    <Settings size={15} /> Policy
                   </button>
                   <button 
                     onClick={() => handleEdit(queue)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', color: '#4b5563', border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', background: 'white' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', background: '#ffffff', fontSize: '0.825rem', fontWeight: '500' }}
                     title="Edit Queue"
                   >
-                    <Edit2 size={16} />
+                    <Edit2 size={15} /> Edit
                   </button>
                   <button 
                     onClick={() => { if(window.confirm('Delete queue?')) deleteMutation.mutate(queue.id); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '6px', cursor: 'pointer', background: '#fef2f2' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', color: '#9f1239', border: '1px solid #fecdd3', borderRadius: '8px', cursor: 'pointer', background: '#ffe4e6', fontSize: '0.825rem', fontWeight: '500' }}
                     title="Delete Queue"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={15} />
                   </button>
                   
                   {queue.status === 'active' ? (
                     <button 
                       onClick={() => pauseMutation.mutate(queue.id)}
                       disabled={pauseMutation.isPending}
-                      style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', backgroundColor: '#fef08a', color: '#854d0e', border: '1px solid #fde047', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem' }}
                     >
-                      <Pause size={16} /> Pause
+                      <Pause size={15} /> Pause
                     </button>
                   ) : (
                     <button 
                       onClick={() => resumeMutation.mutate(queue.id)}
                       disabled={resumeMutation.isPending}
-                      style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem' }}
                     >
-                      <Play size={16} /> Resume
+                      <Play size={15} /> Resume
                     </button>
                   )}
                 </div>
@@ -262,36 +265,36 @@ export const QueueOverview = () => {
 
       {/* Create/Edit Queue Modal */}
       {(isCreateModalOpen || editingQueue) && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '400px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-            <h2 style={{ marginTop: 0, marginBottom: '1.5rem' }}>{editingQueue ? 'Edit Queue' : 'Create Queue'}</h2>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px', width: '420px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+            <h2 style={{ marginTop: 0, marginBottom: '1.25rem', fontSize: '1.25rem', fontWeight: '700' }}>{editingQueue ? 'Edit Queue' : 'Create Queue'}</h2>
             
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Name</label>
+              <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>Queue Name</label>
               <input 
                 type="text" 
                 value={queueForm.name} 
                 onChange={(e) => setQueueForm({...queueForm, name: e.target.value})} 
-                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }}
-                disabled={!!editingQueue} // Usually name is immutable or we can allow it
+                style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
+                disabled={!!editingQueue}
               />
             </div>
             
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Concurrency Limit</label>
+              <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '600', color: '#334155', marginBottom: '0.4rem' }}>Concurrency Limit</label>
               <input 
                 type="number" 
                 min="1"
                 value={queueForm.concurrency_limit} 
                 onChange={(e) => setQueueForm({...queueForm, concurrency_limit: parseInt(e.target.value)})} 
-                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }}
+                style={{ width: '100%', padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
               />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
               <button 
                 onClick={() => { setIsCreateModalOpen(false); setEditingQueue(null); }}
-                style={{ padding: '0.5rem 1rem', backgroundColor: 'white', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer' }}
+                style={{ padding: '0.6rem 1.25rem', backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', fontWeight: '500', fontSize: '0.875rem' }}
               >
                 Cancel
               </button>
@@ -304,9 +307,9 @@ export const QueueOverview = () => {
                   }
                 }}
                 disabled={!queueForm.name || createMutation.isPending || updateMutation.isPending}
-                style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                style={{ padding: '0.6rem 1.25rem', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '0.875rem', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.25)' }}
               >
-                Save
+                {editingQueue ? 'Save Changes' : 'Create Queue'}
               </button>
             </div>
           </div>

@@ -20,20 +20,23 @@ export const WorkerStatus = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Activity size={24} /> Worker Status
-        </h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 0.25rem 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <Activity size={24} color="#4f46e5" /> Worker Nodes & Health
+          </h1>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>Live telemetry, heartbeat updates, and status of registered worker processes</p>
+        </div>
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', backgroundColor: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+      <div style={{ display: 'flex', gap: '1.25rem', marginBottom: '1.5rem', backgroundColor: '#ffffff', padding: '1.25rem', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', alignItems: 'center' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#4b5563', marginBottom: '0.25rem' }}>Status</label>
+          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status Filter</label>
           <select 
             value={selectedStatus} 
             onChange={(e) => { setSelectedStatus(e.target.value); setPage(1); }}
-            style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', minWidth: '150px' }}
+            style={{ padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', minWidth: '180px', fontSize: '0.875rem' }}
           >
             <option value="">All Statuses</option>
             {WORKER_STATUSES.map(s => (
@@ -44,39 +47,39 @@ export const WorkerStatus = () => {
       </div>
 
       {/* Table */}
-      <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
         {isLoading ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Loading workers...</div>
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b', fontSize: '0.875rem' }}>Loading workers...</div>
         ) : isError ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444' }}>Error loading workers</div>
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#e11d48', fontSize: '0.875rem' }}>Error loading workers</div>
         ) : workersData?.items?.length === 0 ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No workers found matching criteria.</div>
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b', fontSize: '0.875rem' }}>No active or historical worker nodes found matching criteria.</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, textAlign: 'left' }}>
             <thead>
-              <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>Worker ID</th>
-                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>Name</th>
-                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>Status</th>
-                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>Last Heartbeat</th>
-                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#4b5563', textTransform: 'uppercase' }}>Started At</th>
+              <tr style={{ backgroundColor: '#f8fafc' }}>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Worker ID</th>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Name</th>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Status</th>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Last Heartbeat</th>
+                <th style={{ padding: '0.75rem 1.25rem' }}>Started At</th>
               </tr>
             </thead>
             <tbody>
               {workersData.items.map((worker) => (
                 <tr 
                   key={worker.id} 
-                  style={{ borderBottom: '1px solid #e5e7eb' }}
-                  onMouseOver={e => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                  style={{ borderBottom: '1px solid #e2e8f0', transition: 'background-color 0.15s ease' }}
+                  onMouseOver={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
                   onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', fontFamily: 'monospace' }}>{worker.id.substring(0, 8)}...</td>
-                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', fontWeight: '500' }}>{worker.name}</td>
-                  <td style={{ padding: '0.75rem 1rem' }}><StatusBadge status={worker.status} /></td>
-                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: '#4b5563' }}>
+                  <td style={{ padding: '0.85rem 1.25rem', fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: '#4f46e5', fontWeight: '500' }}>{worker.id.substring(0, 8)}...</td>
+                  <td style={{ padding: '0.85rem 1.25rem', fontSize: '0.875rem', fontWeight: '600', color: '#0f172a' }}>{worker.name}</td>
+                  <td style={{ padding: '0.85rem 1.25rem' }}><StatusBadge status={worker.status} /></td>
+                  <td style={{ padding: '0.85rem 1.25rem', fontSize: '0.85rem', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
                     {worker.last_heartbeat_at ? format(new Date(worker.last_heartbeat_at), 'MMM d, HH:mm:ss') : 'Never'}
                   </td>
-                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: '#4b5563' }}>
+                  <td style={{ padding: '0.85rem 1.25rem', fontSize: '0.85rem', color: '#64748b' }}>
                     {worker.started_at ? format(new Date(worker.started_at), 'MMM d, HH:mm:ss') : '-'}
                   </td>
                 </tr>
@@ -87,22 +90,22 @@ export const WorkerStatus = () => {
         
         {/* Pagination */}
         {workersData?.total > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderTop: '1px solid #e5e7eb' }}>
-            <div style={{ fontSize: '0.875rem', color: '#4b5563' }}>
-              Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, workersData.total)} of {workersData.total} results
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderTop: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
+            <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+              Showing <strong style={{ color: '#0f172a' }}>{((page - 1) * pageSize) + 1}</strong> to <strong style={{ color: '#0f172a' }}>{Math.min(page * pageSize, workersData.total)}</strong> of <strong style={{ color: '#0f172a' }}>{workersData.total}</strong> results
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button 
                 disabled={page === 1}
                 onClick={() => setPage(p => p - 1)}
-                style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', background: 'white', cursor: page === 1 ? 'not-allowed' : 'pointer' }}
+                style={{ padding: '0.45rem 0.85rem', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff', color: '#334155', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1, fontSize: '0.85rem', fontWeight: '500' }}
               >
                 Previous
               </button>
               <button 
                 disabled={page * pageSize >= workersData.total}
                 onClick={() => setPage(p => p + 1)}
-                style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', background: 'white', cursor: page * pageSize >= workersData.total ? 'not-allowed' : 'pointer' }}
+                style={{ padding: '0.45rem 0.85rem', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#ffffff', color: '#334155', cursor: page * pageSize >= workersData.total ? 'not-allowed' : 'pointer', opacity: page * pageSize >= workersData.total ? 0.5 : 1, fontSize: '0.85rem', fontWeight: '500' }}
               >
                 Next
               </button>
