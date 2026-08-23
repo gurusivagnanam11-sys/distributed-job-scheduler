@@ -1,0 +1,161 @@
+flowchart TD
+    %% ==========================================
+    %% COLOR PALETTE & STYLING DEFINITIONS
+    %% ==========================================
+    classDef frontend fill:#DBEAFE,stroke:#1D4ED8,stroke-width:2px,color:#1E3A8A;
+    classDef api fill:#DCFCE7,stroke:#15803D,stroke-width:2px,color:#14532D;
+    classDef database fill:#FFEDD5,stroke:#C2410C,stroke-width:2px,color:#7C2D12;
+    classDef worker fill:#EDE9FE,stroke:#6D28D9,stroke-width:2px,color:#4C1D95;
+    classDef loop fill:#F3E8FF,stroke:#7C3AED,stroke-width:1px,color:#5B21B6;
+    classDef success fill:#DCFCE7,stroke:#16A34A,stroke-width:2px,color:#14532D;
+    classDef retry fill:#FEF3C7,stroke:#D97706,stroke-width:2px,color:#78350F;
+    classDef failure fill:#FEE2E2,stroke:#B91C1C,stroke-width:2px,color:#7F1D1D;
+    classDef state fill:#E0E7FF,stroke:#4338CA,stroke-width:1px,color:#312E81;
+    classDef note fill:#F1F5F9,stroke:#475569,stroke-width:1px,color:#334155,stroke-dasharray: 5 5;
+
+    %% ==========================================
+    %% 1. CLIENTS & SUBMISSION SOURCES
+    %% ==========================================
+    subgraph CLIENTS ["Client Layer"]
+        FE["React + Vite Dashboard"]
+        EXT["External Submission Client"]
+    end
+
+    %% ==========================================
+    %% 2. FASTAPI API LAYER
+    %% ==========================================
+    subgraph API_LAYER ["FastAPI API Layer"]
+        AUTH["Auth Layer: JWT (Dashboard) / X-API-Key (External)"]
+        
+        subgraph API_ENDPOINTS ["REST Endpoints"]
+            SUBMIT["POST /queues/id/jobs - Job Submission"]
+            MANUAL_RETRY["POST /jobs/id/retry - Manual Retry API"]
+            READ_VIEWS["Dashboard & Management APIs"]
+        end
+    end
+
+    %% ==========================================
+    %% 3. POSTGRESQL DATABASE (SOURCE OF TRUTH & COORDINATION)
+    %% ==========================================
+    subgraph DB_LAYER ["PostgreSQL Database & Coordination Layer"]
+        DB[("PostgreSQL Source of Truth")]
+        
+        DB_TABLES["Persisted Schema Tables"]
+    end
+
+    %% ==========================================
+    %% 4. HORIZONTAL WORKER CLUSTER
+    %% ==========================================
+    subgraph WORKER_CLUSTER ["Distributed Worker Cluster"]
+        
+        subgraph WORKER_MAIN ["Worker Process 1"]
+            
+            subgraph LOOPS ["Concurrent Async Loops"]
+                CLAIM_LOOP["Claim Loop"]
+                EXECUTOR["Executor"]
+                HEARTBEAT_LOOP["Heartbeat Loop"]
+                REAPER_LOOP["Reaper Loop"]
+                RECUR_SCHEDULER["Recurring Scheduler"]
+            end
+            
+            CLAIM_ACTION["claim_jobs: Queue FOR UPDATE + Jobs FOR UPDATE SKIP LOCKED"]
+            
+            JOB_HANDLER["Job Handler Execution"]
+        end
+
+        W2["Worker 2"]
+        W3["Worker 3"]
+        WN["Worker N"]
+
+        SCALE_NOTE["Horizontal Scaling via PostgreSQL Row Locks"]
+    end
+
+    %% ==========================================
+    %% 5. JOB LIFECYCLE & STATE TRANSITIONS
+    %% ==========================================
+    subgraph LIFECYCLE ["Job Lifecycle State Machine"]
+        ST_SUBMITTED["Submitted"]
+        ST_QUEUED["Queued / Scheduled"]
+        ST_CLAIMED["Claimed"]
+        ST_RUNNING["Running"]
+        ST_COMPLETED["Completed"]
+        ST_RETRYING["Retrying with Backoff"]
+        ST_DEAD_LETTER["Dead Letter Queue"]
+    end
+
+    %% ==========================================
+    %% REQUEST FLOW & AUTHENTICATION PATHS
+    %% ==========================================
+    FE --> AUTH
+    EXT --> AUTH
+    
+    AUTH --> SUBMIT
+    AUTH --> MANUAL_RETRY
+    AUTH --> READ_VIEWS
+
+    SUBMIT --> DB
+    READ_VIEWS <--> DB
+    DB <--> DB_TABLES
+
+    %% ==========================================
+    %% WORKER EXECUTION & CLAIM FLOW
+    %% ==========================================
+    CLAIM_LOOP --> CLAIM_ACTION
+    CLAIM_ACTION --> DB
+    CLAIM_ACTION --> EXECUTOR
+    EXECUTOR --> JOB_HANDLER
+    JOB_HANDLER --> DB
+
+    %% State Transitions
+    ST_SUBMITTED --> ST_QUEUED
+    ST_QUEUED --> ST_CLAIMED
+    ST_CLAIMED --> ST_RUNNING
+
+    JOB_HANDLER --> Success --> ST_COMPLETED
+    JOB_HANDLER --> Failure --> EVAL_RETRY{"Retries Left?"}
+
+    EVAL_RETRY -->|Yes| ST_RETRYING
+    ST_RETRYING --> DB
+    EVAL_RETRY -->|No| ST_DEAD_LETTER
+    ST_DEAD_LETTER --> DB
+
+    %% ==========================================
+    %% REAPER & STALE LEASE RECOVERY FLOW
+    %% ==========================================
+    REAPER_LOOP --> DB
+    REAPER_LOOP --> EVAL_REAPER{"Retries Left?"}
+    EVAL_REAPER -->|Yes| ST_RETRYING
+    EVAL_REAPER -->|No| ST_DEAD_LETTER
+
+    %% ==========================================
+    %% MANUAL RETRY FLOW
+    %% ==========================================
+    MANUAL_RETRY --> DB
+    ST_DEAD_LETTER -.-> MANUAL_RETRY
+
+    %% ==========================================
+    %% RECURRING SCHEDULER & HEARTBEAT FLOWS
+    %% ==========================================
+    RECUR_SCHEDULER --> DB
+    HEARTBEAT_LOOP --> DB
+
+    %% ==========================================
+    %% HORIZONTAL WORKER CLUSTER CONNECTIONS
+    %% ==========================================
+    DB <--> W2
+    DB <--> W3
+    DB <--> WN
+
+    %% ==========================================
+    %% APPLY COLOR CLASSES
+    %% ==========================================
+    class FE,EXT frontend;
+    class AUTH,SUBMIT,MANUAL_RETRY,READ_VIEWS api;
+    class DB,DB_TABLES database;
+    class WORKER_MAIN,W2,W3,WN worker;
+    class CLAIM_LOOP,EXECUTOR,HEARTBEAT_LOOP,REAPER_LOOP,RECUR_SCHEDULER,CLAIM_ACTION,JOB_HANDLER loop;
+    class ST_COMPLETED success;
+    class ST_RETRYING,EVAL_RETRY,EVAL_REAPER retry;
+    class ST_DEAD_LETTER failure;
+    class ST_SUBMITTED,ST_QUEUED,ST_CLAIMED,ST_RUNNING state;
+    class SCALE_NOTE note;
