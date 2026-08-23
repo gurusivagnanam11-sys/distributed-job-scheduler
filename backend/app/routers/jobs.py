@@ -516,7 +516,7 @@ async def get_job_failure_summary(
 ):
     """
     Get an AI-generated plain-English summary of a job's most recent failure.
-    Uses Anthropic's claude-sonnet-4-6 model and caches the result on the JobExecution row.
+    Uses Google Gemini (gemini-1.5-flash) and caches the result on the JobExecution row.
     """
     from app.models.job_execution import ExecutionStatus
     

@@ -623,7 +623,7 @@ async def test_recurring_scheduler():
             cron_expression="* * * * *",
             job_payload={"test": "2"},
             is_active=True,
-            next_run_at=now + timedelta(minutes=1),
+            next_run_at=now + timedelta(hours=1),
             created_at=now,
             updated_at=now,
         )

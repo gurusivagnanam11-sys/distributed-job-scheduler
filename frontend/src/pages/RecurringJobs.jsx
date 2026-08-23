@@ -35,12 +35,12 @@ export const RecurringJobs = () => {
   });
 
   const pauseMutation = useMutation({
-    mutationFn: (templateId) => updateRecurringJob(selectedQueue, templateId, { is_paused: true }),
+    mutationFn: (templateId) => updateRecurringJob(selectedQueue, templateId, { is_active: false }),
     onSuccess: () => queryClient.invalidateQueries(['recurringJobs']),
   });
 
   const resumeMutation = useMutation({
-    mutationFn: (templateId) => updateRecurringJob(selectedQueue, templateId, { is_paused: false }),
+    mutationFn: (templateId) => updateRecurringJob(selectedQueue, templateId, { is_active: true }),
     onSuccess: () => queryClient.invalidateQueries(['recurringJobs']),
   });
 
@@ -102,7 +102,7 @@ export const RecurringJobs = () => {
                     {template.cron_expression}
                   </td>
                   <td style={{ padding: '0.75rem 1rem' }}>
-                    {template.is_paused ? (
+                    {!template.is_active ? (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', backgroundColor: '#fef3c7', color: '#92400e', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500' }}>
                         <Pause size={12} /> Paused
                       </span>
@@ -117,7 +117,7 @@ export const RecurringJobs = () => {
                   </td>
                   <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                      {template.is_paused ? (
+                      {!template.is_active ? (
                         <button 
                           onClick={() => resumeMutation.mutate(template.id)}
                           disabled={resumeMutation.isPending}
