@@ -37,23 +37,30 @@ shutdown_event = asyncio.Event()
 
 
 async def register_worker() -> uuid.UUID:
-    """Register this worker in the workers table and return its ID."""
+    """Register this worker in the workers table, retrying if DB migrations are in progress."""
     worker_name = f"worker-{platform.node()}-{uuid.uuid4().hex[:8]}"
-    now = datetime.now(timezone.utc)
 
-    async with async_session_factory() as session:
-        worker = Worker(
-            name=worker_name,
-            status=WorkerStatus.ONLINE,
-            started_at=now,
-            last_heartbeat_at=now,
-        )
-        session.add(worker)
-        await session.commit()
-        worker_id = worker.id
+    for attempt in range(15):
+        try:
+            now = datetime.now(timezone.utc)
+            async with async_session_factory() as session:
+                worker = Worker(
+                    name=worker_name,
+                    status=WorkerStatus.ONLINE,
+                    started_at=now,
+                    last_heartbeat_at=now,
+                )
+                session.add(worker)
+                await session.commit()
+                worker_id = worker.id
 
-    logger.info(f"Worker registered: {worker_name} (id={worker_id})")
-    return worker_id
+            logger.info(f"Worker registered: {worker_name} (id={worker_id})")
+            return worker_id
+        except Exception as e:
+            logger.warning(f"Database/migration not ready yet (attempt {attempt + 1}/15): {e}. Retrying in 2s...")
+            await asyncio.sleep(2)
+
+    raise RuntimeError("Worker registration failed: database tables not ready after 30 seconds.")
 
 
 async def mark_worker_offline(worker_id: uuid.UUID):

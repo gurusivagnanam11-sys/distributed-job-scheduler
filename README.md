@@ -22,7 +22,7 @@ docker-compose up --build
 
 **Access Endpoints:**
 - **Frontend Dashboard:** [http://localhost:5173](http://localhost:5173)
-- **Interactive API Docs (Swagger):** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Interactive API Docs (Swagger):** [http://localhost:8001/docs](http://localhost:8001/docs)
 
 ---
 
