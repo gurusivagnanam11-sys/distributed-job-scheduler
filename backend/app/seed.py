@@ -14,7 +14,47 @@ from app.models.job_execution import JobExecution
 from app.models.recurring_job_template import RecurringJobTemplate
 from sqlalchemy import select, delete
 
+import asyncpg
+import subprocess
+from app.core.config import settings
+
+async def ensure_db():
+    db_url = settings.DATABASE_URL
+    # parse db_url
+    # format: postgresql+asyncpg://user:pass@host:port/dbname
+    clean_url = db_url.replace("postgresql+asyncpg://", "")
+    auth_host, db_name = clean_url.split("/")
+    if "@" in auth_host:
+        auth, host_port = auth_host.split("@")
+        user, password = auth.split(":")
+    else:
+        user = "postgres"
+        password = "postgres"
+        host_port = auth_host
+    
+    if ":" in host_port:
+        host, port = host_port.split(":")
+    else:
+        host = host_port
+        port = "5432"
+
+    try:
+        sys_conn = await asyncpg.connect(user=user, password=password, host=host, port=int(port), database="postgres")
+        res = await sys_conn.fetchval("SELECT 1 FROM pg_database WHERE datname = $1", db_name)
+        if not res:
+            print(f"Database {db_name} does not exist. Creating database...")
+            await sys_conn.execute(f'CREATE DATABASE "{db_name}"')
+        await sys_conn.close()
+    except Exception as e:
+        print(f"Database check/creation notice: {e}")
+
+    try:
+        subprocess.run(["alembic", "upgrade", "head"], check=True)
+    except Exception as e:
+        print(f"Alembic migration notice: {e}")
+
 async def seed():
+    await ensure_db()
     print("=== SEEDING EXPANDED DEMO DATABASE ===")
     async with async_session_factory() as session:
         # Clean up any existing demo user or org
