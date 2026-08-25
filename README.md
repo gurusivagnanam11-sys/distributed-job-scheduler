@@ -41,6 +41,16 @@ The system reliably executes asynchronous background jobs across multiple worker
 
 ---
 
+## ✨ Highlights
+
+- **Atomic job claiming via PostgreSQL row-locking (`FOR UPDATE SKIP LOCKED`)**, proven correct with a real concurrent-session test that caught an actual race condition during development.
+- **Dual authentication**: JWT for the dashboard, project-scoped API keys for external job-submission clients.
+- **Full job lifecycle observability**: execution history, chronological timeline, queue-level throughput/success-rate metrics.
+- **Bonus features**: workflow dependencies (jobs can depend on other jobs) and AI-generated failure summaries (Gemini-backed).
+- **51 automated tests** covering concurrency, retries, dead-letter handling, and auth, all passing.
+
+---
+
 ## 🚀 Key Features
 
 - **Multi-Tenant Hierarchy**: Organizations -> Users -> Projects -> Queues -> Jobs.
@@ -61,6 +71,9 @@ The system reliably executes asynchronous background jobs across multiple worker
 ---
 
 ## 🏗 Architecture Overview
+
+![Architecture Diagram](docs/ARCHITECTURE.png)
+*High-level system architecture showing client layer, FastAPI API server, PostgreSQL coordination database, and distributed worker cluster.*
 
 ```text
                +-----------------------------+
